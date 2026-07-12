@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MemoCards">
-<link rel="apple-touch-icon" href="icon-193.png">
-<link rel="icon" href="icon-193.png">
+<link rel="apple-touch-icon" href="CI_logo.png">
+<link rel="icon" href="CI_logo.png">
 <style>
 :root{
   --bg:#F7F7F5; --bg-elev:#FFFFFF; --bg-sunken:#EFEEEA;
@@ -165,7 +165,7 @@ tr.row-selected{background:var(--accent-soft);}
 <div class="overlay" id="mobileOverlay"></div>
 <div id="pwGate" style="position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;">
   <div class="card pad" style="width:100%;max-width:340px;text-align:center;">
-    <div class="mark" style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#8B6FF0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;margin:0 auto 14px;">M</div>
+    <div class="mark" style="width:44px;height:44px;border-radius:11px;background:transparent;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;overflow:hidden;"><img src="CI_logo.png" alt="logo" style="width:100%;height:100%;object-fit:contain;"></div>
     <div style="font-weight:800;font-size:16px;margin-bottom:4px;">MemoCards</div>
     <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:18px;">Enter password to continue</div>
     <input type="password" id="pwGateInput" placeholder="Password" style="text-align:center;margin-bottom:10px;" autofocus>
@@ -643,7 +643,7 @@ function renderSidebar(){
   const sb=document.getElementById('sidebar');
   const dueTotal = CACHE.cards.filter(c=>isDue(c) && (c.state!=='new')).length + Math.min(APP.newLimit, CACHE.cards.filter(c=>c.state==='new').length);
   sb.innerHTML = `
-    <div class="brand"><div class="mark">M</div><div class="name">${t('appName')}</div></div>
+    <div class="brand"><div class="mark" style="overflow:hidden;background:transparent;"><img src="CI_logo.png" alt="logo" style="width:100%;height:100%;object-fit:contain;"></div><div class="name">${t('appName')}</div></div>
     <div class="nav-group">
       ${NAV_ITEMS.map(n=>`
         <div class="navitem ${APP.screen===n.id?'active':''}" data-nav="${n.id}">
@@ -1596,7 +1596,7 @@ async function restoreFullData(data){
 // ===== TELEGRAM INTEGRATION =====
 // FILL THESE IN after deploying telegram-worker.js to Cloudflare (see that file's header comment):
 const TELEGRAM_CONFIG = {
-  botUsername: 'wuminjunbot',
+  botUsername: 'Wuminjunbot',
   relayUrl: 'https://rough-glade-7019.narzullayevumidjon976.workers.dev',
 };
 let telegramUserInfo = null; // populated after successful Telegram login, kept in localStorage for "send my data" feature
