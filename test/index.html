@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FlashLearn - Zamonaviy Flashcard Platformasi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ===== LOGIN EKRANI ===== -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="logo">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+                <h1>FlashLearn</h1>
+            </div>
+            <p class="subtitle">Davom etish uchun parolni kiriting</p>
+            
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="Parol" autocomplete="current-password">
+            </div>
+            
+            <div id="loginError" class="error-msg">Parol noto'g'ri! Qaytadan urinib ko'ring.</div>
+            
+            <button id="loginBtn" class="btn-primary">Kirish</button>
+            <p class="hint">Standart parol: kongzixueyuan</p>
+        </div>
+    </div>
+
+    <!-- ===== ASOSIY ILOVA ===== -->
+    <div id="mainApp" class="app-container hidden">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>FlashLearn</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    Boshqaruv paneli
+                </a>
+                <a href="#" class="nav-item" data-view="study">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    O'rganish
+                </a>
+                <a href="#" class="nav-item" data-view="decks">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    Decklar (To'plamlar)
+                </a>
+                <a href="#" class="nav-item" data-view="stats">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Statistika
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Sozlamalar
+                </a>
+            </nav>
+            <button id="logoutBtn" class="logout-btn">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Chiqish
+            </button>
+        </aside>
+
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <button id="menuToggle" class="menu-toggle">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <h2 id="mobileTitle">Dashboard</h2>
+        </header>
+
+        <!-- Overlay for mobile -->
+        <div id="overlay" class="overlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Dashboard View -->
+            <section id="dashboardView" class="view active">
+                <h1 class="view-title">Boshqaruv paneli</h1>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <p class="stat-label">Jami Decklar</p>
+                        <h3 class="stat-value">4</h3>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">Bugungi kartalar</p>
+                        <h3 class="stat-value">24</h3>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">O'rganish ketma-ketligi</p>
+                        <h3 class="stat-value">7 kun</h3>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-label">To'g'ri javoblar</p>
+                        <h3 class="stat-value">85%</h3>
+                    </div>
+                </div>
+                <button class="btn-primary btn-large">Bugungi darsni boshlash</button>
+            </section>
+
+            <!-- Study View -->
+            <section id="studyView" class="view">
+                <h1 class="view-title">O'rganish</h1>
+                <div class="flashcard-container">
+                    <div class="flashcard" id="flashcard">
+                        <div class="flashcard-inner">
+                            <div class="flashcard-front">
+                                <p class="card-text">Bu yerda savol yoki asosiy matn bo'ladi.</p>
+                                <span class="card-hint">Javobni ko'rish uchun bosing</span>
+                            </div>
+                            <div class="flashcard-back">
+                                <p class="card-text">Bu yerda javob yoki tarjima bo'ladi.</p>
+                                <span class="card-hint">Baholash uchun pastga qarang</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rating-buttons hidden" id="ratingButtons">
+                        <button class="btn-rate btn-again">Qayta</button>
+                        <button class="btn-rate btn-hard">Qiyin</button>
+                        <button class="btn-rate btn-good">Yaxshi</button>
+                        <button class="btn-rate btn-easy">Oson</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settingsView" class="view">
+                <h1 class="view-title">Sozlamalar</h1>
+                
+                <div class="settings-card">
+                    <h3>Xavfsizlik</h3>
+                    <div class="form-group">
+                        <label for="newPasswordInput">Yangi parol o'rnatish</label>
+                        <input type="password" id="newPasswordInput" placeholder="Yangi parolni kiriting">
+                        <button id="changePasswordBtn" class="btn-secondary">Parolni yangilash</button>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3>Ma'lumotlar</h3>
+                    <div class="form-group">
+                        <label>Zaxira nusxa (Backup)</label>
+                        <div class="btn-row">
+                            <button class="btn-secondary">Eksport (JSON)</button>
+                            <button class="btn-secondary">Import (JSON)</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
