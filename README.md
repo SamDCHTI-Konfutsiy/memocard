@@ -1,4 +1,4 @@
-# FlashLearn User Guide / Foydalanuvchi Qo‘llanmasi / 用户指南
+# MemoCards user guide/ Foydalanuvchi Qo‘llanmasi / 用户指南
 # Muallif: SamDCHTI magistranti Narzullayev Umidjon
 # t.me/wuminjun
 ---
