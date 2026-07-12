@@ -165,9 +165,9 @@ tr.row-selected{background:var(--accent-soft);}
 <div class="overlay" id="mobileOverlay"></div>
 <div id="pwGate" style="position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;">
   <div class="card pad" style="width:100%;max-width:340px;text-align:center;">
-    <div class="mark" style="width:44px;height:44px;border-radius:11px;background:transparent;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;overflow:hidden;"><img src="CI_logo.png" alt="logo" style="width:100%;height:100%;object-fit:contain;"></div>
+    <div class="mark" style="width:88px;height:88px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;overflow:hidden;"><img src="CI_logo.png" alt="logo" style="width:100%;height:100%;object-fit:cover;"></div>
     <div style="font-weight:800;font-size:16px;margin-bottom:4px;">MemoCards</div>
-    <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:18px;">Enter password to continue</div>
+    <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:18px;">Enter password to continue or connect with @wuminjun via Telegram</div>
     <input type="password" id="pwGateInput" placeholder="Password" style="text-align:center;margin-bottom:10px;" autofocus>
     <div id="pwGateError" style="color:var(--bad);font-size:12px;min-height:16px;margin-bottom:8px;"></div>
     <button class="btn" id="pwGateBtn" style="width:100%;">Unlock</button>
@@ -601,6 +601,13 @@ function renderCloze(text, activeNum, revealed){
     return revealed ? answer : answer; // other clozes stay visible
   });
 }
+function clozePlainText(text, activeNum, revealed){
+  return text.replace(/\{\{c(\d+)::(.*?)(?:::(.*?))?\}\}/g, (m, num, answer, hint)=>{
+    num = parseInt(num);
+    if(num === activeNum) return revealed ? answer : (hint||'...');
+    return answer;
+  });
+}
 
 
 // ===== app_core.js =====
@@ -643,7 +650,7 @@ function renderSidebar(){
   const sb=document.getElementById('sidebar');
   const dueTotal = CACHE.cards.filter(c=>isDue(c) && (c.state!=='new')).length + Math.min(APP.newLimit, CACHE.cards.filter(c=>c.state==='new').length);
   sb.innerHTML = `
-    <div class="brand"><div class="mark" style="overflow:hidden;background:transparent;"><img src="CI_logo.png" alt="logo" style="width:100%;height:100%;object-fit:contain;"></div><div class="name">${t('appName')}</div></div>
+    <div class="brand"><div class="mark" style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:transparent;flex-shrink:0;"><img src="CI_logo.png" alt="logo" style="width:100%;height:100%;object-fit:cover;"></div><div class="name">${t('appName')}</div></div>
     <div class="nav-group">
       ${NAV_ITEMS.map(n=>`
         <div class="navitem ${APP.screen===n.id?'active':''}" data-nav="${n.id}">
@@ -1026,6 +1033,26 @@ function collectCardTypeFields(type){
 
 
 // ===== app_study.js =====
+// ===== TEXT-TO-SPEECH (auto language detection for mixed-language cards) =====
+function detectSpeechLang(text){
+  if(/[\u4e00-\u9fff]/.test(text)) return 'zh-CN';          // Chinese hanzi
+  if(/[\u0400-\u04FF]/.test(text)) return 'ru-RU';           // Cyrillic (uz/ru)
+  if(/[a-zA-Z]/.test(text)) return 'en-US';                  // Latin script fallback
+  return undefined;                                          // let the browser pick
+}
+function speakText(text){
+  if(!text) return;
+  try{
+    if(!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel(); // stop anything already playing
+    const utter = new SpeechSynthesisUtterance(text);
+    const lang = detectSpeechLang(text);
+    if(lang) utter.lang = lang;
+    utter.rate = 0.9;
+    window.speechSynthesis.speak(utter);
+  }catch(e){ /* TTS unsupported or blocked — fail silently */ }
+}
+
 // ===== STUDY SESSION =====
 function buildStudyQueue(deckId){
   const ids = deckAndDescendantIds(deckId);
@@ -1146,19 +1173,20 @@ function stageWrap(inner){ return `<div class="card pad" style="min-height:320px
 function renderBasicStudy(card, stage){
   stage.innerHTML = stageWrap(`
     ${mediaHtml(card)}
-    <div style="font-size:19px;font-weight:600;max-width:480px;">${esc(card.fields.front)}</div>
+    <div id="frontText" style="font-size:19px;font-weight:600;max-width:480px;cursor:pointer;" title="${t('tts_tapToHear')||'Tap to hear'}">${esc(card.fields.front)}</div>
     <div id="answerBox" class="hidden" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);width:100%;max-width:480px;">
       <div style="font-size:17px;color:var(--accent);">${esc(card.fields.back)}</div>
     </div>
     <button class="btn secondary" id="revealBtn" style="margin-top:20px;">${t('study_showAnswer')}</button>
     <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
   `);
-  wireReveal(card, stage);
+  document.getElementById('frontText').addEventListener('click', ()=>speakText(card.fields.front));
+  wireReveal(card, stage, ()=>speakText(card.fields.back));
 }
 function renderChineseStudy(card, stage){
   stage.innerHTML = stageWrap(`
     ${mediaHtml(card)}
-    <div style="font-size:44px;font-weight:700;font-family:'PingFang SC','Microsoft YaHei',sans-serif;">${esc(card.fields.hanzi)}</div>
+    <div id="frontText" style="font-size:44px;font-weight:700;font-family:'PingFang SC','Microsoft YaHei',sans-serif;cursor:pointer;" title="${t('tts_tapToHear')||'Tap to hear'}">${esc(card.fields.hanzi)}</div>
     <div id="answerBox" class="hidden" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);width:100%;max-width:480px;">
       <div style="font-size:18px;color:var(--accent);font-weight:600;">${esc(card.fields.pinyin||'')}</div>
       <div style="font-size:16px;margin-top:4px;">${esc(card.fields.translation)}</div>
@@ -1166,14 +1194,15 @@ function renderChineseStudy(card, stage){
     <button class="btn secondary" id="revealBtn" style="margin-top:20px;">${t('study_showAnswer')}</button>
     <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
   `);
-  wireReveal(card, stage);
+  document.getElementById('frontText').addEventListener('click', ()=>speakText(card.fields.hanzi));
+  wireReveal(card, stage, ()=>speakText(card.fields.hanzi));
 }
 function renderClozeStudy(card, stage){
   const shown = renderCloze(card.fields.text, card.fields.clozeNum, false);
   const revealedHtml = renderCloze(card.fields.text, card.fields.clozeNum, true);
   stage.innerHTML = stageWrap(`
     ${mediaHtml(card)}
-    <div id="clozeShown" style="font-size:18px;line-height:1.6;max-width:480px;">${shown}</div>
+    <div id="clozeShown" style="font-size:18px;line-height:1.6;max-width:480px;cursor:pointer;" title="${t('tts_tapToHear')||'Tap to hear'}">${shown}</div>
     <div id="answerBox" class="hidden" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);width:100%;max-width:480px;">
       <div style="font-size:18px;line-height:1.6;color:var(--accent);">${revealedHtml}</div>
     </div>
@@ -1181,9 +1210,10 @@ function renderClozeStudy(card, stage){
     <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
   `);
   stage.querySelectorAll('.cloze-blank').forEach(el=>el.style.cssText='background:var(--accent-soft);color:var(--accent);padding:1px 8px;border-radius:4px;font-weight:700;');
-  wireReveal(card, stage);
+  document.getElementById('clozeShown').addEventListener('click', ()=>speakText(clozePlainText(card.fields.text, card.fields.clozeNum, false)));
+  wireReveal(card, stage, ()=>speakText(clozePlainText(card.fields.text, card.fields.clozeNum, true)));
 }
-function wireReveal(card, stage){
+function wireReveal(card, stage, onReveal){
   const reveal = ()=>{
     document.getElementById('answerBox').classList.remove('hidden');
     document.getElementById('revealBtn').classList.add('hidden');
@@ -1191,6 +1221,7 @@ function wireReveal(card, stage){
     stage.querySelectorAll('.cloze-answer').forEach(el=>el.style.cssText='background:var(--good-soft);color:var(--good);padding:1px 8px;border-radius:4px;font-weight:700;');
     studyKeyHandler=null;
     wireGradeButtons(stage, (g)=>commitGrade(card,g));
+    if(onReveal) onReveal();
   };
   document.getElementById('revealBtn').addEventListener('click', reveal);
   studyKeyHandler = (e)=>{ if(e.code==='Space'){ e.preventDefault(); reveal(); } };
@@ -1199,10 +1230,11 @@ function renderMcqStudy(card, stage){
   const opts = card.fields.options;
   stage.innerHTML = stageWrap(`
     ${mediaHtml(card)}
-    <div style="font-size:18px;font-weight:600;max-width:480px;margin-bottom:16px;">${esc(card.fields.question)}</div>
+    <div id="frontText" style="font-size:18px;font-weight:600;max-width:480px;margin-bottom:16px;cursor:pointer;" title="${t('tts_tapToHear')||'Tap to hear'}">${esc(card.fields.question)}</div>
     <div id="mcqOpts" style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px;"></div>
     <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
   `);
+  document.getElementById('frontText').addEventListener('click', ()=>speakText(card.fields.question));
   const box = document.getElementById('mcqOpts');
   opts.forEach((o,i)=>{
     const el = document.createElement('button');
@@ -1596,7 +1628,7 @@ async function restoreFullData(data){
 // ===== TELEGRAM INTEGRATION =====
 // FILL THESE IN after deploying telegram-worker.js to Cloudflare (see that file's header comment):
 const TELEGRAM_CONFIG = {
-  botUsername: 'Wuminjunbot',
+  botUsername: 'wuminjunbot',
   relayUrl: 'https://rough-glade-7019.narzullayevumidjon976.workers.dev',
 };
 let telegramUserInfo = null; // populated after successful Telegram login, kept in localStorage for "send my data" feature
