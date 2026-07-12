@@ -1034,59 +1034,117 @@ function collectCardTypeFields(type){
 
 
 // ===== app_study.js =====
-// ===== TEXT-TO-SPEECH (auto language detection, online engine + local fallback) =====
+// ===== TEXT-TO-SPEECH (device voices, smart selection + remembered preference) =====
+let cachedVoices = [];
+function loadTtsVoices(){
+  if('speechSynthesis' in window) cachedVoices = window.speechSynthesis.getVoices();
+}
+if('speechSynthesis' in window){
+  loadTtsVoices();
+  window.speechSynthesis.onvoiceschanged = loadTtsVoices;
+}
 function detectSpeechLang(text){
   if(/[\u4e00-\u9fff]/.test(text)) return 'zh-CN';          // Chinese hanzi
   if(/[\u0400-\u04FF]/.test(text)) return 'ru-RU';           // Cyrillic (uz/ru)
   if(/[a-zA-Z]/.test(text)) return 'en-US';                  // Latin script fallback
   return undefined;                                          // let the browser pick
 }
-// Google Translate's TTS uses slightly different language codes than the
-// browser's SpeechSynthesis API — map between them.
-function toOnlineLangCode(browserLang){
-  if(browserLang==='zh-CN') return 'zh-CN';
-  if(browserLang==='ru-RU') return 'ru';
-  if(browserLang==='en-US') return 'en';
-  return 'en';
+function voicesForLang(lang){
+  if(!lang) return [];
+  const prefix = lang.split('-')[0].toLowerCase();
+  return cachedVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith(prefix));
 }
-let _ttsAudio = null;
-function speakTextOnline(text, onlineLang){
-  return new Promise((resolve, reject)=>{
-    try{
-      if(_ttsAudio){ try{ _ttsAudio.pause(); }catch(e){} }
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${onlineLang}&client=tw-ob`;
-      const audio = new Audio(url);
-      _ttsAudio = audio;
-      audio.onended = ()=>resolve();
-      audio.onerror = ()=>reject(new Error('online TTS request failed'));
-      audio.play().catch(reject);
-    }catch(e){ reject(e); }
-  });
+function pickVoiceForLang(lang){
+  const pool = voicesForLang(lang);
+  if(!pool.length) return null;
+  let preferredVoiceURI = null;
+  try{ preferredVoiceURI = localStorage.getItem('mc_voice_'+lang); }catch(e){}
+  if(preferredVoiceURI){
+    const chosen = pool.find(v=>v.voiceURI===preferredVoiceURI);
+    if(chosen) return chosen;
+  }
+  const local = pool.filter(v=>v.localService);
+  return local[0] || pool[0];
 }
-function speakTextLocal(text, lang){
+function speakText(text){
+  if(!text) return;
+  if(!('speechSynthesis' in window)) return;
+  loadTtsVoices();
+  const lang = detectSpeechLang(text);
+  const voice = lang ? pickVoiceForLang(lang) : null;
   try{
-    if(!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     if(lang) utter.lang = lang;
-    utter.rate = 0.9;
+    utter.rate = 0.85;
+    if(voice) utter.voice = voice;
     window.speechSynthesis.speak(utter);
   }catch(e){ /* TTS unsupported or blocked — fail silently */ }
 }
-async function speakText(text){
-  if(!text) return;
-  const lang = detectSpeechLang(text);
-  // Very long text (e.g. a full cloze sentence) can exceed the online endpoint's
-  // reliable length — go straight to the local voice for those.
-  if(text.length > 200){ speakTextLocal(text, lang); return; }
+function speakTextWithVoice(text, lang, voiceURI){
   try{
-    if(window.speechSynthesis) window.speechSynthesis.cancel(); // don't let local + online overlap
-    await speakTextOnline(text, toOnlineLangCode(lang));
-  }catch(e){
-    // Offline, blocked, or the online engine failed — fall back to whatever
-    // voice the device has installed, same as before.
-    speakTextLocal(text, lang);
-  }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    utter.rate = 0.85;
+    const v = voicesForLang(lang).find(x=>x.voiceURI===voiceURI);
+    if(v) utter.voice = v;
+    window.speechSynthesis.speak(utter);
+  }catch(e){}
+}
+
+// ===== Settings UI: pick & test a preferred voice per language =====
+const TTS_LANGS = [
+  {code:'zh-CN', label:'Xitoy tili (中文)', sample:'你好'},
+  {code:'ru-RU', label:"Kirill (o'zbek/rus)", sample:'Привет'},
+  {code:'en-US', label:'Lotin/Ingliz tili', sample:'Hello'},
+];
+function renderTtsVoiceList(){
+  const box = document.getElementById('ttsVoiceList');
+  if(!box) return;
+  loadTtsVoices();
+  box.innerHTML = TTS_LANGS.map(l=>{
+    const pool = voicesForLang(l.code);
+    let preferredVoiceURI = null;
+    try{ preferredVoiceURI = localStorage.getItem('mc_voice_'+l.code); }catch(e){}
+    const current = pool.length ? (pool.find(v=>v.voiceURI===preferredVoiceURI) || pickVoiceForLang(l.code)) : null;
+    const options = pool.map(v=>`<option value="${esc(v.voiceURI)}" ${current && v.voiceURI===current.voiceURI?'selected':''}>${esc(v.name)}${v.localService?' (offlayn)':' (onlayn)'}</option>`).join('');
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12.5px;font-weight:700;margin-bottom:5px;">${l.label}</div>
+        ${pool.length ? `
+          <div style="display:flex;gap:8px;">
+            <select data-tts-lang="${l.code}" style="flex:1;">${options}</select>
+            <button class="btn secondary sm" data-tts-test="${l.code}">▶</button>
+          </div>
+        ` : `<div style="font-size:11.5px;color:var(--ink-faint);">Bu til uchun qurilmangizda ovoz topilmadi. Qurilma sozlamalari → Til va kiritish → Nutqni sintez qilish bo'limidan mos ovozni qo'shing.</div>`}
+      </div>`;
+  }).join('');
+  box.querySelectorAll('[data-tts-lang]').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      const lang = sel.dataset.ttsLang;
+      try{ localStorage.setItem('mc_voice_'+lang, sel.value); }catch(e){}
+      const sample = TTS_LANGS.find(l=>l.code===lang).sample;
+      speakTextWithVoice(sample, lang, sel.value);
+      showToast('Ovoz saqlandi');
+    });
+  });
+  box.querySelectorAll('[data-tts-test]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const lang = btn.dataset.ttsTest;
+      const sel = box.querySelector(`select[data-tts-lang="${lang}"]`);
+      const sample = TTS_LANGS.find(l=>l.code===lang).sample;
+      speakTextWithVoice(sample, lang, sel ? sel.value : null);
+    });
+  });
+}
+// Voices sometimes finish loading asynchronously after the page first
+// renders — if the person is already looking at Settings when that happens,
+// refresh the list so it doesn't stay stuck on "no voice found".
+if('speechSynthesis' in window){
+  window.speechSynthesis.addEventListener('voiceschanged', ()=>{
+    if(APP && APP.screen==='settings') renderTtsVoiceList();
+  });
 }
 
 // ===== STUDY SESSION =====
@@ -1572,6 +1630,13 @@ function renderSettingsScreen(wrap){
       </div>
 
       <div class="card pad" style="max-width:520px;margin-top:18px;">
+        <div style="font-weight:800;font-size:13.5px;margin-bottom:4px;">🔊 Ovoz sozlamalari (TTS)</div>
+        <div style="font-size:11.5px;color:var(--ink-faint);margin-bottom:12px;">Kartalarni tinglashda ishlatiladigan ovozni tanlang. Ro'yxat qurilmangizda o'rnatilgan ovozlarga bog'liq.</div>
+        <div id="ttsVoiceList"></div>
+        <button class="btn secondary sm" id="ttsRefreshBtn" style="margin-top:4px;">Ro'yxatni yangilash</button>
+      </div>
+
+      <div class="card pad" style="max-width:520px;margin-top:18px;">
         <div style="font-weight:800;font-size:13.5px;margin-bottom:12px;">🔒 Change Password</div>
         <label class="field"><span class="lbl">Current password</span><input type="password" id="pwOld" autocomplete="off"></label>
         <label class="field"><span class="lbl">New password (min 4 characters)</span><input type="password" id="pwNew" autocomplete="off"></label>
@@ -1583,6 +1648,8 @@ function renderSettingsScreen(wrap){
         </div>
       </div>
     </div>`;
+  renderTtsVoiceList();
+  document.getElementById('ttsRefreshBtn').addEventListener('click', ()=>{ loadTtsVoices(); renderTtsVoiceList(); showToast("Yangilandi"); });
   document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
     APP.newLimit = parseInt(document.getElementById('setNewLimit').value)||20;
     APP.reviewLimit = parseInt(document.getElementById('setReviewLimit').value)||200;
