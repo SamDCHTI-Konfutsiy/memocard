@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemoCards</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#5B5FEF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MemoCards">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#F7F7F5; --bg-elev:#FFFFFF; --bg-sunken:#EFEEEA;
+  --ink:#1B1B1F; --ink-soft:#5C5B66; --ink-faint:#9694A0;
+  --line:#E4E2DD; --line-soft:#EDECE8;
+  --accent:#5B5FEF; --accent-soft:#EEEEFD; --accent-ink:#FFFFFF;
+  --good:#2F9E6E; --good-soft:#E6F6EF;
+  --warn:#D08B2A; --warn-soft:#FCF1E1;
+  --bad:#D64545; --bad-soft:#FCEAEA;
+  --again:#D64545; --hard:#D08B2A; --goodbtn:#2F9E6E; --easy:#3F7FE0;
+  --shadow: 0 1px 2px rgba(20,20,30,.04), 0 6px 20px rgba(20,20,30,.06);
+  --radius:10px; --radius-sm:6px;
+  --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Inter",Helvetica,Arial,sans-serif;
+  --cjk: "PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --mono: "SF Mono",Consolas,Monaco,monospace;
+  --sidebar-w: 224px;
+}
+[data-theme="dark"]{
+  --bg:#17171C; --bg-elev:#1F1F26; --bg-sunken:#131317;
+  --ink:#EDECF2; --ink-soft:#B3B1BE; --ink-faint:#726F7E;
+  --line:#2C2C35; --line-soft:#26262E;
+  --accent:#7B7FFF; --accent-soft:#26263D; --accent-ink:#FFFFFF;
+  --good:#3FBE8A; --good-soft:#173226;
+  --warn:#E3A34C; --warn-soft:#332711;
+  --bad:#F16B6B; --bad-soft:#331A1A;
+  --again:#F16B6B; --hard:#E3A34C; --goodbtn:#3FBE8A; --easy:#6C9FF5;
+  --shadow: 0 1px 2px rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;transition:background .2s ease,color .2s ease;}
+body.font-sm{font-size:13px;} body.font-md{font-size:14.5px;} body.font-lg{font-size:16px;}
+*{scrollbar-width:thin;}
+button,input,select,textarea{font-family:inherit;color:inherit;}
+a{color:var(--accent);}
+.hidden{display:none !important;}
+
+/* ---------- Layout ---------- */
+.shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;background:var(--bg-elev);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:16px 12px;position:sticky;top:0;height:100vh;overflow-y:auto;
+  transition:transform .2s ease;
+}
+.brand{display:flex;align-items:center;gap:9px;padding:6px 8px 18px;}
+.brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#8B6FF0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0;}
+.brand .name{font-weight:800;font-size:16px;letter-spacing:-.01em;}
+.nav-group{margin-bottom:4px;}
+.navitem{
+  display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:8px;cursor:pointer;
+  font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-bottom:1px;user-select:none;
+}
+.navitem:hover{background:var(--bg-sunken);color:var(--ink);}
+.navitem.active{background:var(--accent-soft);color:var(--accent);}
+.navitem .ic{width:18px;text-align:center;font-size:15px;}
+.navitem .cnt{margin-left:auto;font-size:11px;background:var(--bg-sunken);padding:1px 7px;border-radius:10px;color:var(--ink-faint);font-variant-numeric:tabular-nums;}
+.navitem.active .cnt{background:#fff;color:var(--accent);}
+[data-theme="dark"] .navitem.active .cnt{background:var(--accent);color:#fff;}
+.sidebar-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:6px;}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--bg-elev);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--ink-soft);}
+.icon-btn:hover{background:var(--bg-sunken);}
+
+.main{flex:1;min-width:0;padding:26px 32px 60px;max-width:1180px;}
+.mobile-topbar{display:none;align-items:center;gap:12px;padding:10px 4px 18px;position:sticky;top:0;background:var(--bg);z-index:40;}
+.mobile-topbar .name{font-weight:800;font-size:16px;}
+@media (max-width:900px){
+  .sidebar{position:fixed;left:0;z-index:60;transform:translateX(-100%);box-shadow:var(--shadow);}
+  .sidebar.open{transform:translateX(0);}
+  .main{padding:14px 14px 90px;}
+  .mobile-topbar{display:flex;}
+  .pagehead h1{font-size:19px;}
+  table{font-size:12px;}
+  th,td{padding:7px 6px;}
+}
+@media (max-width:520px){
+  .stat-box .big{font-size:21px;}
+  .btn{padding:10px 14px;font-size:13px;}
+  .btn-row .btn{flex:1;justify-content:center;}
+}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55;}
+.overlay.show{display:block;}
+
+.pagehead{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+.pagehead h1{font-size:22px;font-weight:800;margin:0;letter-spacing:-.01em;}
+.pagehead .sub{font-size:13px;color:var(--ink-faint);margin-top:3px;}
+
+.screen{display:none;}
+.screen.active{display:block;animation:fadein .16s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important;}}
+
+/* ---------- Cards / boxes ---------- */
+.card{background:var(--bg-elev);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);}
+.pad{padding:18px;}
+.grid{display:grid;gap:14px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+@media (max-width:760px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:repeat(2,1fr);}.grid-2{grid-template-columns:1fr;}}
+
+.stat-box{padding:16px;}
+.stat-box .big{font-size:26px;font-weight:800;letter-spacing:-.02em;}
+.stat-box .lbl{font-size:12px;color:var(--ink-faint);margin-top:4px;font-weight:600;}
+.stat-box .delta{font-size:11px;margin-top:6px;font-weight:700;}
+.stat-box .delta.up{color:var(--good);} .stat-box .delta.down{color:var(--bad);}
+
+/* ---------- Buttons ---------- */
+.btn{font-weight:700;font-size:13.5px;padding:10px 16px;border-radius:8px;border:1px solid transparent;background:var(--accent);color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+.btn:hover{filter:brightness(1.06);}
+.btn:active{transform:translateY(1px);}
+.btn.secondary{background:var(--bg-elev);color:var(--ink);border-color:var(--line);}
+.btn.secondary:hover{background:var(--bg-sunken);}
+.btn.ghost{background:transparent;color:var(--ink-soft);border-color:transparent;}
+.btn.ghost:hover{background:var(--bg-sunken);}
+.btn.danger{background:var(--bad);color:#fff;}
+.btn.sm{padding:6px 11px;font-size:12px;border-radius:6px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+.fab{position:fixed;bottom:22px;right:22px;z-index:30;}
+@media (max-width:900px){.fab{bottom:18px;right:18px;}}
+
+input[type=text],input[type=number],input[type=search],input[type=password],textarea,select{
+  background:var(--bg-elev);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:13.5px;color:var(--ink);width:100%;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);}
+label.field{display:block;margin-bottom:12px;}
+label.field .lbl{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
+textarea{resize:vertical;min-height:70px;font-family:var(--sans);}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;}
+.badge.new{background:var(--accent-soft);color:var(--accent);}
+.badge.learn{background:var(--warn-soft);color:var(--warn);}
+.badge.review{background:var(--good-soft);color:var(--good);}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg-sunken);border:1px solid var(--line);padding:2px 8px;border-radius:12px;font-size:11px;color:var(--ink-soft);}
+
+*:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:80;font-weight:600;}
+[data-theme="dark"] .toast{background:var(--accent);color:#fff;}
+
+.empty{text-align:center;padding:56px 20px;color:var(--ink-faint);}
+.empty .ic{font-size:34px;margin-bottom:10px;opacity:.5;}
+.empty h3{font-size:15px;color:var(--ink-soft);margin:0 0 6px;}
+.empty p{font-size:12.5px;max-width:300px;margin:0 auto;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);padding:0 10px 8px;border-bottom:1px solid var(--line);font-weight:700;}
+td{padding:9px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+tr.row-selected{background:var(--accent-soft);}
+</style>
+</head>
+<body>
+<div class="overlay" id="mobileOverlay"></div>
+<div id="pwGate" style="position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div class="card pad" style="width:100%;max-width:340px;text-align:center;">
+    <div class="mark" style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#8B6FF0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;margin:0 auto 14px;">M</div>
+    <div style="font-weight:800;font-size:16px;margin-bottom:4px;">MemoCards</div>
+    <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:18px;">Enter password to continue</div>
+    <input type="password" id="pwGateInput" placeholder="Password" style="text-align:center;margin-bottom:10px;" autofocus>
+    <div id="pwGateError" style="color:var(--bad);font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+    <button class="btn" id="pwGateBtn" style="width:100%;">Unlock</button>
+    <div id="tgWidgetDivider" style="display:flex;align-items:center;gap:10px;margin:18px 0 14px;color:var(--ink-faint);font-size:11px;">
+      <div style="flex:1;height:1px;background:var(--line);"></div>OR<div style="flex:1;height:1px;background:var(--line);"></div>
+    </div>
+    <div id="tgWidgetContainer" style="display:flex;justify-content:center;"></div>
+    <div id="tgWidgetHint" style="font-size:10.5px;color:var(--ink-faint);margin-top:8px;"></div>
+  </div>
+</div>
+<div class="shell" id="appShell" style="display:none;">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main">
+    <div class="mobile-topbar">
+      <button class="icon-btn" id="mobileMenuBtn">☰</button>
+      <span class="name">MemoCards</span>
+    </div>
+    <div id="screens"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+
+// ===== i18n.js =====
+// ===== i18n =====
+const I18N = {
+en: {
+  appName:"MemoCards", nav_dashboard:"Dashboard", nav_decks:"Decks", nav_study:"Study",
+  nav_stats:"Statistics", nav_browser:"Card Browser", nav_io:"Import / Export",
+  nav_settings:"Settings", nav_backup:"Backup Manager",
+  dash_title:"Dashboard", dash_sub:"Your learning overview",
+  dash_dueToday:"Due Today", dash_newToday:"New Available", dash_streak:"Day Streak",
+  dash_retention:"Retention", dash_totalCards:"Total Cards", dash_studyNow:"Study Now",
+  dash_recentDecks:"Your Decks", dash_noDecks:"No decks yet", dash_createFirst:"Create your first deck to get started",
+  decks_title:"Decks", decks_sub:"Organize your learning material",
+  decks_new:"New Deck", decks_search:"Search decks...", decks_name:"Deck name",
+  decks_parent:"Parent deck (optional)", decks_none:"— None (top level) —",
+  decks_cards:"cards", decks_due:"due", decks_new_col:"new", decks_learned:"learned",
+  decks_rename:"Rename", decks_duplicate:"Duplicate", decks_delete:"Delete", decks_study:"Study",
+  decks_addCard:"Add Card", decks_confirmDelete:"Delete this deck and all its cards? This cannot be undone.",
+  study_title:"Study", study_chooseDeck:"Choose a deck to study",
+  study_again:"Again", study_hard:"Hard", study_good:"Good", study_easy:"Easy",
+  study_showAnswer:"Show Answer", study_tapToReveal:"Tap card or press Space to reveal",
+  study_sessionDone:"Session complete!", study_reviewedCount:"cards reviewed",
+  study_backToDecks:"Back to Decks", study_typeAnswer:"Type your answer...", study_check:"Check",
+  study_correct:"Correct!", study_incorrect:"Incorrect. Answer:",
+  stats_title:"Statistics", stats_overview:"Overview", stats_heatmap:"Study Activity",
+  stats_accuracy:"Accuracy", stats_totalReviews:"Total Reviews", stats_avgEase:"Avg. Ease",
+  stats_cardsByState:"Cards by State", stats_new:"New", stats_learning:"Learning", stats_review:"Review", stats_mastered:"Mastered",
+  browser_title:"Card Browser", browser_search:"Search cards...", browser_allDecks:"All Decks",
+  browser_selectAll:"Select All", browser_bulkDelete:"Delete Selected", browser_bulkTag:"Add Tag",
+  browser_edit:"Edit", browser_delete:"Delete", browser_noResults:"No cards found",
+  browser_front:"Front", browser_back:"Back", browser_deck:"Deck", browser_tags:"Tags", browser_due:"Due",
+  io_title:"Import / Export", io_exportAll:"Export All Data", io_exportDeck:"Export Deck",
+  io_import:"Import Backup", io_dropHint:"Drag & drop a .json backup file here, or click to browse",
+  io_importSuccess:"Import successful", io_importError:"Import failed — invalid file format",
+  io_selectDeckExport:"Select deck to export",
+  settings_title:"Settings", settings_general:"General", settings_newLimit:"New cards per day",
+  settings_reviewLimit:"Reviews per day", settings_theme:"Theme", settings_light:"Light", settings_dark:"Dark",
+  settings_fontSize:"Font size", settings_small:"Small", settings_medium:"Medium", settings_large:"Large",
+  settings_language:"Interface language", settings_timer:"Show study timer", settings_autoBackup:"Auto-backup frequency",
+  settings_never:"Never", settings_daily:"Daily", settings_weekly:"Weekly",
+  backup_title:"Backup Manager", backup_create:"Create Backup Now", backup_list:"Local Backups",
+  backup_restore:"Restore", backup_delete:"Delete", backup_none:"No local backups yet",
+  backup_confirmRestore:"Restore this backup? Current data will be replaced.",
+  card_type:"Card type", card_basic:"Basic", card_reverse:"Basic + Reverse", card_cloze:"Cloze",
+  card_mcq:"Multiple Choice", card_chinese:"Chinese (Hanzi/Pinyin/Translation)",
+  card_front:"Front", card_back:"Back", card_clozeText:"Text (use {{c1::answer}})",
+  card_question:"Question", card_options:"Options (one per line)", card_correctOption:"Correct option number",
+  card_hanzi:"Hanzi", card_pinyin:"Pinyin", card_translation:"Translation",
+  card_image:"Image (optional)", card_audio:"Audio (optional)", card_tags:"Tags (comma separated)",
+  card_save:"Save Card", card_cancel:"Cancel", card_deck:"Deck",
+  toast_saved:"Saved", toast_deleted:"Deleted", toast_deckCreated:"Deck created",
+  keyboard_hint:"Keyboard: Space=flip, 1-4=grade, ←=back",
+},
+zh: {
+  appName:"记忆卡", nav_dashboard:"仪表盘", nav_decks:"卡组", nav_study:"学习",
+  nav_stats:"统计", nav_browser:"卡片浏览器", nav_io:"导入/导出",
+  nav_settings:"设置", nav_backup:"备份管理",
+  dash_title:"仪表盘", dash_sub:"学习概览",
+  dash_dueToday:"今日待复习", dash_newToday:"可学新卡", dash_streak:"连续天数",
+  dash_retention:"记忆保持率", dash_totalCards:"卡片总数", dash_studyNow:"开始学习",
+  dash_recentDecks:"我的卡组", dash_noDecks:"暂无卡组", dash_createFirst:"创建您的第一个卡组开始学习",
+  decks_title:"卡组", decks_sub:"整理您的学习材料",
+  decks_new:"新建卡组", decks_search:"搜索卡组...", decks_name:"卡组名称",
+  decks_parent:"父卡组（可选）", decks_none:"— 无（顶级）—",
+  decks_cards:"张卡片", decks_due:"待复习", decks_new_col:"新卡", decks_learned:"已学会",
+  decks_rename:"重命名", decks_duplicate:"复制", decks_delete:"删除", decks_study:"学习",
+  decks_addCard:"添加卡片", decks_confirmDelete:"删除此卡组及其所有卡片？此操作无法撤销。",
+  study_title:"学习", study_chooseDeck:"选择要学习的卡组",
+  study_again:"重来", study_hard:"困难", study_good:"良好", study_easy:"简单",
+  study_showAnswer:"显示答案", study_tapToReveal:"点击卡片或按空格键显示答案",
+  study_sessionDone:"本次学习完成！", study_reviewedCount:"张卡片已复习",
+  study_backToDecks:"返回卡组", study_typeAnswer:"输入答案...", study_check:"检查",
+  study_correct:"正确！", study_incorrect:"错误。正确答案：",
+  stats_title:"统计", stats_overview:"总览", stats_heatmap:"学习活动热力图",
+  stats_accuracy:"正确率", stats_totalReviews:"总复习次数", stats_avgEase:"平均难度系数",
+  stats_cardsByState:"卡片状态分布", stats_new:"新卡", stats_learning:"学习中", stats_review:"复习中", stats_mastered:"已掌握",
+  browser_title:"卡片浏览器", browser_search:"搜索卡片...", browser_allDecks:"全部卡组",
+  browser_selectAll:"全选", browser_bulkDelete:"删除所选", browser_bulkTag:"添加标签",
+  browser_edit:"编辑", browser_delete:"删除", browser_noResults:"未找到卡片",
+  browser_front:"正面", browser_back:"背面", browser_deck:"卡组", browser_tags:"标签", browser_due:"到期时间",
+  io_title:"导入/导出", io_exportAll:"导出全部数据", io_exportDeck:"导出卡组",
+  io_import:"导入备份", io_dropHint:"将 .json 备份文件拖放到此处，或点击浏览",
+  io_importSuccess:"导入成功", io_importError:"导入失败——文件格式无效",
+  io_selectDeckExport:"选择要导出的卡组",
+  settings_title:"设置", settings_general:"通用", settings_newLimit:"每日新卡数量",
+  settings_reviewLimit:"每日复习数量", settings_theme:"主题", settings_light:"浅色", settings_dark:"深色",
+  settings_fontSize:"字体大小", settings_small:"小", settings_medium:"中", settings_large:"大",
+  settings_language:"界面语言", settings_timer:"显示学习计时器", settings_autoBackup:"自动备份频率",
+  settings_never:"从不", settings_daily:"每天", settings_weekly:"每周",
+  backup_title:"备份管理", backup_create:"立即创建备份", backup_list:"本地备份列表",
+  backup_restore:"恢复", backup_delete:"删除", backup_none:"暂无本地备份",
+  backup_confirmRestore:"恢复此备份？当前数据将被替换。",
+  card_type:"卡片类型", card_basic:"基础卡", card_reverse:"基础+反向卡", card_cloze:"填空卡",
+  card_mcq:"选择题", card_chinese:"中文卡（汉字/拼音/翻译）",
+  card_front:"正面", card_back:"背面", card_clozeText:"文本（使用 {{c1::答案}} 格式）",
+  card_question:"问题", card_options:"选项（每行一个）", card_correctOption:"正确选项编号",
+  card_hanzi:"汉字", card_pinyin:"拼音", card_translation:"翻译",
+  card_image:"图片（可选）", card_audio:"音频（可选）", card_tags:"标签（逗号分隔）",
+  card_save:"保存卡片", card_cancel:"取消", card_deck:"卡组",
+  toast_saved:"已保存", toast_deleted:"已删除", toast_deckCreated:"卡组已创建",
+  keyboard_hint:"快捷键：空格=翻转，1-4=评分，←=返回",
+},
+uz: {
+  appName:"MemoCards", nav_dashboard:"Bosh sahifa", nav_decks:"To'plamlar", nav_study:"O'rganish",
+  nav_stats:"Statistika", nav_browser:"Kartalar ro'yxati", nav_io:"Import/Eksport",
+  nav_settings:"Sozlamalar", nav_backup:"Zaxira nusxalar",
+  dash_title:"Bosh sahifa", dash_sub:"O'quv jarayoni ko'rinishi",
+  dash_dueToday:"Bugun takrorlash", dash_newToday:"Yangi kartalar", dash_streak:"Kunlik seriya",
+  dash_retention:"Eslab qolish darajasi", dash_totalCards:"Jami kartalar", dash_studyNow:"O'rganishni boshlash",
+  dash_recentDecks:"To'plamlaringiz", dash_noDecks:"Hali to'plam yo'q", dash_createFirst:"Boshlash uchun birinchi to'plamingizni yarating",
+  decks_title:"To'plamlar", decks_sub:"O'quv materiallaringizni tartibga soling",
+  decks_new:"Yangi to'plam", decks_search:"To'plam qidirish...", decks_name:"To'plam nomi",
+  decks_parent:"Ota to'plam (ixtiyoriy)", decks_none:"— Yo'q (yuqori daraja) —",
+  decks_cards:"karta", decks_due:"muddati o'tgan", decks_new_col:"yangi", decks_learned:"o'rganilgan",
+  decks_rename:"Nomini o'zgartirish", decks_duplicate:"Nusxalash", decks_delete:"O'chirish", decks_study:"O'rganish",
+  decks_addCard:"Karta qo'shish", decks_confirmDelete:"Bu to'plam va undagi barcha kartalar o'chirilsinmi? Bu amalni bekor qilib bo'lmaydi.",
+  study_title:"O'rganish", study_chooseDeck:"O'rganish uchun to'plam tanlang",
+  study_again:"Bilmadim", study_hard:"Qiyin", study_good:"Bo'ldi", study_easy:"Oson",
+  study_showAnswer:"Javobni ko'rsatish", study_tapToReveal:"Javobni ko'rish uchun bosing yoki bo'sh joy tugmasi",
+  study_sessionDone:"Sessiya tugadi!", study_reviewedCount:"ta karta ko'rib chiqildi",
+  study_backToDecks:"To'plamlarga qaytish", study_typeAnswer:"Javobingizni yozing...", study_check:"Tekshirish",
+  study_correct:"To'g'ri!", study_incorrect:"Xato. To'g'ri javob:",
+  stats_title:"Statistika", stats_overview:"Umumiy ko'rinish", stats_heatmap:"O'quv faolligi",
+  stats_accuracy:"Aniqlik", stats_totalReviews:"Jami takrorlashlar", stats_avgEase:"O'rtacha yengillik",
+  stats_cardsByState:"Kartalar holati", stats_new:"Yangi", stats_learning:"O'rganilmoqda", stats_review:"Takrorlanmoqda", stats_mastered:"O'zlashtirilgan",
+  browser_title:"Kartalar ro'yxati", browser_search:"Kartalarni qidirish...", browser_allDecks:"Barcha to'plamlar",
+  browser_selectAll:"Hammasini tanlash", browser_bulkDelete:"Tanlanganlarni o'chirish", browser_bulkTag:"Teg qo'shish",
+  browser_edit:"Tahrirlash", browser_delete:"O'chirish", browser_noResults:"Karta topilmadi",
+  browser_front:"Old tomon", browser_back:"Orqa tomon", browser_deck:"To'plam", browser_tags:"Teglar", browser_due:"Muddati",
+  io_title:"Import/Eksport", io_exportAll:"Barcha ma'lumotni eksport qilish", io_exportDeck:"To'plamni eksport qilish",
+  io_import:"Zaxiradan tiklash", io_dropHint:".json zaxira faylini shu yerga tashlang yoki bosib tanlang",
+  io_importSuccess:"Import muvaffaqiyatli", io_importError:"Import xato — fayl formati noto'g'ri",
+  io_selectDeckExport:"Eksport uchun to'plam tanlang",
+  settings_title:"Sozlamalar", settings_general:"Umumiy", settings_newLimit:"Kuniga yangi kartalar",
+  settings_reviewLimit:"Kuniga takrorlashlar", settings_theme:"Mavzu", settings_light:"Yorug'", settings_dark:"Qorong'i",
+  settings_fontSize:"Shrift o'lchami", settings_small:"Kichik", settings_medium:"O'rta", settings_large:"Katta",
+  settings_language:"Interfeys tili", settings_timer:"O'rganish taymerini ko'rsatish", settings_autoBackup:"Avtomatik zaxira chastotasi",
+  settings_never:"Hech qachon", settings_daily:"Har kuni", settings_weekly:"Har hafta",
+  backup_title:"Zaxira nusxalar", backup_create:"Hozir zaxira yaratish", backup_list:"Lokal zaxiralar",
+  backup_restore:"Tiklash", backup_delete:"O'chirish", backup_none:"Hali lokal zaxira yo'q",
+  backup_confirmRestore:"Shu zaxira tiklansinmi? Joriy ma'lumotlar almashtiriladi.",
+  card_type:"Karta turi", card_basic:"Oddiy", card_reverse:"Oddiy + teskari", card_cloze:"Bo'shliq to'ldirish",
+  card_mcq:"Ko'p tanlovli", card_chinese:"Xitoycha (Hanzi/Pinyin/Tarjima)",
+  card_front:"Old tomon", card_back:"Orqa tomon", card_clozeText:"Matn ({{c1::javob}} shaklida)",
+  card_question:"Savol", card_options:"Variantlar (har birini alohida qatorga)", card_correctOption:"To'g'ri variant raqami",
+  card_hanzi:"Hanzi", card_pinyin:"Pinyin", card_translation:"Tarjima",
+  card_image:"Rasm (ixtiyoriy)", card_audio:"Audio (ixtiyoriy)", card_tags:"Teglar (vergul bilan)",
+  card_save:"Kartani saqlash", card_cancel:"Bekor qilish", card_deck:"To'plam",
+  toast_saved:"Saqlandi", toast_deleted:"O'chirildi", toast_deckCreated:"To'plam yaratildi",
+  keyboard_hint:"Klaviatura: Bo'sh joy=aylantirish, 1-4=baholash, ←=orqaga",
+}
+};
+let currentLang = 'en';
+function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key; }
+
+
+// ===== db.js =====
+// ===== IndexedDB LAYER =====
+const DB_NAME = 'memocards_db';
+const DB_VERSION = 1;
+let db = null;
+
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e)=>{
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('decks')){
+        const s = d.createObjectStore('decks', {keyPath:'id', autoIncrement:true});
+        s.createIndex('parentId','parentId',{unique:false});
+      }
+      if(!d.objectStoreNames.contains('cards')){
+        const s = d.createObjectStore('cards', {keyPath:'id', autoIncrement:true});
+        s.createIndex('deckId','deckId',{unique:false});
+        s.createIndex('due','due',{unique:false});
+        s.createIndex('state','state',{unique:false});
+        s.createIndex('noteId','noteId',{unique:false});
+      }
+      if(!d.objectStoreNames.contains('reviews')){
+        const s = d.createObjectStore('reviews', {keyPath:'id', autoIncrement:true});
+        s.createIndex('cardId','cardId',{unique:false});
+        s.createIndex('timestamp','timestamp',{unique:false});
+      }
+      if(!d.objectStoreNames.contains('settings')){
+        d.createObjectStore('settings', {keyPath:'key'});
+      }
+      if(!d.objectStoreNames.contains('backups')){
+        d.createObjectStore('backups', {keyPath:'id', autoIncrement:true});
+      }
+    };
+    req.onsuccess = (e)=>{ db=e.target.result; resolve(db); };
+    req.onerror = (e)=>reject(e);
+  });
+}
+
+function tx(storeNames, mode='readonly'){ return db.transaction(storeNames, mode); }
+
+function idbGetAll(store){
+  return new Promise((resolve,reject)=>{
+    const req = tx([store]).objectStore(store).getAll();
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbGet(store, key){
+  return new Promise((resolve,reject)=>{
+    const req = tx([store]).objectStore(store).get(key);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbPut(store, val){
+  return new Promise((resolve,reject)=>{
+    const req = tx([store],'readwrite').objectStore(store).put(val);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbDelete(store, key){
+  return new Promise((resolve,reject)=>{
+    const req = tx([store],'readwrite').objectStore(store).delete(key);
+    req.onsuccess=()=>resolve();
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbClear(store){
+  return new Promise((resolve,reject)=>{
+    const req = tx([store],'readwrite').objectStore(store).clear();
+    req.onsuccess=()=>resolve();
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbByIndex(store, indexName, value){
+  return new Promise((resolve,reject)=>{
+    const req = tx([store]).objectStore(store).index(indexName).getAll(value);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbCount(store){
+  return new Promise((resolve,reject)=>{
+    const req = tx([store]).objectStore(store).count();
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+
+// ===== In-memory caches (rebuilt from IDB, kept in sync on writes) =====
+let CACHE = { decks:[], cards:[], reviews:[], settings:{} };
+
+async function loadAllFromDB(){
+  CACHE.decks = await idbGetAll('decks');
+  CACHE.cards = await idbGetAll('cards');
+  CACHE.reviews = await idbGetAll('reviews');
+  const settingsRows = await idbGetAll('settings');
+  CACHE.settings = {};
+  settingsRows.forEach(r=>CACHE.settings[r.key]=r.value);
+}
+
+async function getSetting(key, fallback){
+  return (key in CACHE.settings) ? CACHE.settings[key] : fallback;
+}
+async function setSetting(key, value){
+  CACHE.settings[key]=value;
+  await idbPut('settings', {key, value});
+}
+
+// ===== Deck operations =====
+async function createDeck(name, parentId=null){
+  const deck = { name, parentId: parentId||null, created: Date.now(), description:'' };
+  const id = await idbPut('decks', deck);
+  deck.id = id; CACHE.decks.push(deck);
+  return deck;
+}
+async function renameDeck(id, newName){
+  const d = CACHE.decks.find(x=>x.id===id); if(!d) return;
+  d.name = newName; await idbPut('decks', d);
+}
+async function deleteDeck(id){
+  const childDecks = CACHE.decks.filter(d=>d.parentId===id);
+  for(const c of childDecks) await deleteDeck(c.id);
+  const cardsToDelete = CACHE.cards.filter(c=>c.deckId===id);
+  for(const c of cardsToDelete) await deleteCard(c.id);
+  await idbDelete('decks', id);
+  CACHE.decks = CACHE.decks.filter(d=>d.id!==id);
+}
+async function duplicateDeck(id){
+  const orig = CACHE.decks.find(d=>d.id===id); if(!orig) return;
+  const newDeck = await createDeck(orig.name+' (copy)', orig.parentId);
+  const origCards = CACHE.cards.filter(c=>c.deckId===id);
+  for(const c of origCards){
+    const copy = {...c}; delete copy.id;
+    copy.deckId = newDeck.id; copy.due=Date.now(); copy.interval=0; copy.reps=0; copy.ease=2.5; copy.state='new'; copy.lapses=0;
+    const newId = await idbPut('cards', copy); copy.id=newId; CACHE.cards.push(copy);
+  }
+  return newDeck;
+}
+
+// ===== Card operations =====
+function newCardShell(deckId, type, fields, extra={}){
+  return {
+    deckId, type, fields, tags: extra.tags||[], media: extra.media||{},
+    noteId: extra.noteId || null,
+    interval:0, ease:2.5, reps:0, lapses:0, due:Date.now(), state:'new',
+    created: Date.now(), modified: Date.now()
+  };
+}
+async function addCard(card){
+  const id = await idbPut('cards', card);
+  card.id = id; CACHE.cards.push(card);
+  return card;
+}
+async function updateCard(card){
+  card.modified = Date.now();
+  await idbPut('cards', card);
+  const idx = CACHE.cards.findIndex(c=>c.id===card.id);
+  if(idx>=0) CACHE.cards[idx]=card;
+}
+async function deleteCard(id){
+  await idbDelete('cards', id);
+  CACHE.cards = CACHE.cards.filter(c=>c.id!==id);
+}
+async function logReview(cardId, grade, timeTaken){
+  const rec = { cardId, grade, timestamp: Date.now(), timeTaken: timeTaken||0 };
+  const id = await idbPut('reviews', rec); rec.id=id; CACHE.reviews.push(rec);
+}
+
+
+// ===== srs.js =====
+// ===== SM-2 SPACED REPETITION ALGORITHM =====
+// grade: 0=Again, 1=Hard, 2=Good, 3=Easy
+const DAY_MS = 24*60*60*1000;
+
+function scheduleCard(card, grade){
+  const now = Date.now();
+  card.modified = now;
+
+  if(grade === 0){
+    // Again: lapse, back to learning, short relearn step
+    card.lapses = (card.lapses||0) + 1;
+    card.reps = 0;
+    card.ease = Math.max(1.3, (card.ease||2.5) - 0.20);
+    card.interval = 0;
+    card.state = 'learning';
+    card.due = now + 10*60*1000; // 10 minutes
+    return card;
+  }
+
+  card.reps = (card.reps||0) + 1;
+
+  if(card.state === 'new' || card.state === 'learning'){
+    // learning steps: 1st good -> 1 day, 2nd -> depends on grade
+    if(grade === 1){ // hard while learning: short step
+      card.interval = 0;
+      card.due = now + 15*60*1000; // 15 min
+      card.state = 'learning';
+      return card;
+    }
+    if(grade === 2){ // good: graduate to 1 day
+      card.interval = 1;
+      card.state = 'review';
+      card.due = now + 1*DAY_MS;
+      return card;
+    }
+    if(grade === 3){ // easy: graduate straight to 4 days
+      card.interval = 4;
+      card.ease = (card.ease||2.5) + 0.15;
+      card.state = 'review';
+      card.due = now + 4*DAY_MS;
+      return card;
+    }
+  }
+
+  // state === 'review': standard SM-2-like progression
+  if(grade === 1){ // hard
+    card.ease = Math.max(1.3, card.ease - 0.15);
+    card.interval = Math.max(1, Math.round(card.interval * 1.2));
+  } else if(grade === 2){ // good
+    card.interval = Math.max(1, Math.round(card.interval * card.ease));
+  } else if(grade === 3){ // easy
+    card.ease = card.ease + 0.15;
+    card.interval = Math.max(1, Math.round(card.interval * card.ease * 1.3));
+  }
+  card.state = 'review';
+  card.due = now + card.interval*DAY_MS;
+  return card;
+}
+
+function isDue(card){ return card.due <= Date.now(); }
+function isMastered(card){ return card.reps>=3 && card.interval>=21 && card.state==='review'; }
+function cardStateLabel(card){
+  if(card.reps===0) return 'new';
+  if(isMastered(card)) return 'mastered';
+  if(card.state==='learning') return 'learning';
+  return 'review';
+}
+
+// ===== Cloze / Reverse note expansion =====
+function extractClozeNumbers(text){
+  const matches = [...text.matchAll(/\{\{c(\d+)::/g)];
+  return [...new Set(matches.map(m=>parseInt(m[1])))].sort((a,b)=>a-b);
+}
+function renderCloze(text, activeNum, revealed){
+  return text.replace(/\{\{c(\d+)::(.*?)(?:::(.*?))?\}\}/g, (m, num, answer, hint)=>{
+    num = parseInt(num);
+    if(num === activeNum){
+      return revealed ? `<span class="cloze-answer">${answer}</span>` : `<span class="cloze-blank">[${hint||'...'}]</span>`;
+    }
+    return revealed ? answer : answer; // other clozes stay visible
+  });
+}
+
+
+// ===== app_core.js =====
+// ===== APP STATE =====
+let APP = {
+  screen: 'dashboard',
+  theme: 'light',
+  fontSize: 'md',
+  newLimit: 20,
+  reviewLimit: 200,
+  showTimer: true,
+  autoBackup: 'daily',
+  studySession: { deckId:null, queue:[], pos:0, sessionCorrect:0, startTime:0 },
+  browserFilter: { deckId:null, search:'', selected:new Set() },
+};
+
+const NAV_ITEMS = [
+  {id:'dashboard', icon:'⌂', key:'nav_dashboard'},
+  {id:'decks', icon:'▤', key:'nav_decks'},
+  {id:'study', icon:'▶', key:'nav_study'},
+  {id:'stats', icon:'◔', key:'nav_stats'},
+  {id:'browser', icon:'☰', key:'nav_browser'},
+  {id:'io', icon:'⇅', key:'nav_io'},
+  {id:'settings', icon:'⚙', key:'nav_settings'},
+  {id:'backup', icon:'⛁', key:'nav_backup'},
+];
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(ts){ return new Date(ts).toLocaleDateString(); }
+
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(window._toastT);
+  window._toastT=setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(20px)'; },2400);
+}
+
+// ===== SIDEBAR / NAV =====
+function renderSidebar(){
+  const sb=document.getElementById('sidebar');
+  const dueTotal = CACHE.cards.filter(c=>isDue(c) && (c.state!=='new')).length + Math.min(APP.newLimit, CACHE.cards.filter(c=>c.state==='new').length);
+  sb.innerHTML = `
+    <div class="brand"><div class="mark">M</div><div class="name">${t('appName')}</div></div>
+    <div class="nav-group">
+      ${NAV_ITEMS.map(n=>`
+        <div class="navitem ${APP.screen===n.id?'active':''}" data-nav="${n.id}">
+          <span class="ic">${n.icon}</span><span>${t(n.key)}</span>
+          ${n.id==='study' && dueTotal>0 ? `<span class="cnt">${dueTotal}</span>`:''}
+        </div>`).join('')}
+    </div>
+    <div class="sidebar-foot">
+      <button class="icon-btn" id="themeToggleBtn" title="Theme">${APP.theme==='dark'?'☀':'☾'}</button>
+      <select id="langSelect" style="flex:1;padding:6px 8px;font-size:12px;border-radius:8px;border:1px solid var(--line);background:var(--bg-elev);">
+        <option value="en" ${currentLang==='en'?'selected':''}>English</option>
+        <option value="zh" ${currentLang==='zh'?'selected':''}>中文</option>
+        <option value="uz" ${currentLang==='uz'?'selected':''}>O'zbek</option>
+      </select>
+      <button class="icon-btn" id="logoutBtn" title="Logout">⏻</button>
+    </div>`;
+  sb.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click', ()=>{ navigateTo(el.dataset.nav); closeMobileSidebar(); }));
+  document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+  document.getElementById('langSelect').addEventListener('change', (e)=>{ setLanguage(e.target.value); });
+  document.getElementById('logoutBtn').addEventListener('click', doLogout);
+}
+function doLogout(){
+  try{ sessionStorage.removeItem(GATE_SESSION_KEY); }catch(e){}
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('pwGate').style.display='flex';
+  document.getElementById('pwGateInput').value='';
+  document.getElementById('pwGateInput').focus();
+}
+function closeMobileSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobileOverlay').classList.remove('show'); }
+document.getElementById('mobileMenuBtn').addEventListener('click', ()=>{
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('mobileOverlay').classList.add('show');
+});
+document.getElementById('mobileOverlay').addEventListener('click', closeMobileSidebar);
+
+async function setLanguage(lang){ currentLang=lang; await setSetting('lang', lang); renderCurrentScreen(true); }
+async function toggleTheme(){
+  APP.theme = APP.theme==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', APP.theme);
+  await setSetting('theme', APP.theme);
+  renderSidebar();
+}
+
+function navigateTo(screenId){
+  APP.screen = screenId;
+  renderSidebar();
+  renderCurrentScreen();
+}
+function renderCurrentScreen(fullRerender){
+  const wrap = document.getElementById('screens');
+  if(APP.screen==='dashboard') renderDashboard(wrap);
+  else if(APP.screen==='decks') renderDecksScreen(wrap);
+  else if(APP.screen==='study') renderStudyScreen(wrap);
+  else if(APP.screen==='stats') renderStatsScreen(wrap);
+  else if(APP.screen==='browser') renderBrowserScreen(wrap);
+  else if(APP.screen==='io') renderIOScreen(wrap);
+  else if(APP.screen==='settings') renderSettingsScreen(wrap);
+  else if(APP.screen==='backup') renderBackupScreen(wrap);
+  if(fullRerender) renderSidebar();
+}
+
+// ===== DASHBOARD =====
+function computeGlobalStats(){
+  const total = CACHE.cards.length;
+  const dueCards = CACHE.cards.filter(c=>c.state!=='new' && isDue(c));
+  const newCards = CACHE.cards.filter(c=>c.state==='new');
+  const dueCount = dueCards.length + Math.min(APP.newLimit, newCards.length);
+  const last30 = Date.now() - 30*DAY_MS;
+  const recentReviews = CACHE.reviews.filter(r=>r.timestamp>=last30);
+  const correct = recentReviews.filter(r=>r.grade>0).length;
+  const retention = recentReviews.length ? Math.round(correct/recentReviews.length*100) : 0;
+  return { total, dueCount, newCount:newCards.length, retention };
+}
+function computeStreak(){
+  const days = new Set(CACHE.reviews.map(r=>new Date(r.timestamp).toDateString()));
+  let streak=0; let d=new Date();
+  if(!days.has(d.toDateString())){ d.setDate(d.getDate()-1); if(!days.has(d.toDateString())) return 0; }
+  while(days.has(d.toDateString())){ streak++; d.setDate(d.getDate()-1); }
+  return streak;
+}
+
+function renderDashboard(wrap){
+  const g = computeGlobalStats();
+  const streak = computeStreak();
+  const topDecks = CACHE.decks.filter(d=>!d.parentId).slice(0,6);
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><div><h1>${t('dash_title')}</h1><div class="sub">${t('dash_sub')}</div></div>
+        <button class="btn" id="dashStudyBtn">${t('dash_studyNow')} →</button></div>
+      <div class="grid grid-4" style="margin-bottom:24px;">
+        <div class="card stat-box"><div class="big" style="color:var(--accent)">${g.dueCount}</div><div class="lbl">${t('dash_dueToday')}</div></div>
+        <div class="card stat-box"><div class="big" style="color:var(--good)">${g.newCount}</div><div class="lbl">${t('dash_newToday')}</div></div>
+        <div class="card stat-box"><div class="big" style="color:var(--warn)">🔥 ${streak}</div><div class="lbl">${t('dash_streak')}</div></div>
+        <div class="card stat-box"><div class="big">${g.retention}%</div><div class="lbl">${t('dash_retention')}</div></div>
+      </div>
+      <div class="pagehead"><h1 style="font-size:16px;">${t('dash_recentDecks')}</h1></div>
+      <div id="dashDeckGrid" class="grid grid-3"></div>
+    </div>`;
+  const dg = document.getElementById('dashDeckGrid');
+  if(topDecks.length===0){
+    dg.innerHTML = `<div class="empty" style="grid-column:1/-1;"><div class="ic">▤</div><h3>${t('dash_noDecks')}</h3><p>${t('dash_createFirst')}</p>
+      <button class="btn" style="margin-top:12px;" id="dashCreateDeckBtn">${t('decks_new')}</button></div>`;
+    document.getElementById('dashCreateDeckBtn').addEventListener('click', ()=>{ navigateTo('decks'); setTimeout(openNewDeckModal,50); });
+  } else {
+    dg.innerHTML = topDecks.map(d=>deckCardHtml(d)).join('');
+    wireDeckCardEvents(dg);
+  }
+  document.getElementById('dashStudyBtn').addEventListener('click', ()=>navigateTo('study'));
+}
+
+// ===== DECK helpers =====
+function deckStats(deckId){
+  const all = deckAndDescendantIds(deckId);
+  const cards = CACHE.cards.filter(c=>all.has(c.deckId));
+  const due = cards.filter(c=>c.state!=='new' && isDue(c)).length;
+  const neu = cards.filter(c=>c.state==='new').length;
+  const learned = cards.filter(c=>isMastered(c)).length;
+  return {total:cards.length, due, neu, learned};
+}
+function deckAndDescendantIds(deckId){
+  const ids = new Set([deckId]);
+  let changed=true;
+  while(changed){
+    changed=false;
+    CACHE.decks.forEach(d=>{ if(d.parentId && ids.has(d.parentId) && !ids.has(d.id)){ ids.add(d.id); changed=true; } });
+  }
+  return ids;
+}
+function deckCardHtml(d){
+  const st = deckStats(d.id);
+  return `<div class="card pad deck-card" data-deck="${d.id}" style="cursor:pointer;">
+    <div style="font-weight:800;font-size:14.5px;margin-bottom:8px;">${esc(d.name)}</div>
+    <div style="display:flex;gap:12px;font-size:11.5px;color:var(--ink-faint);">
+      <span>${st.total} ${t('decks_cards')}</span>
+      ${st.due>0?`<span style="color:var(--accent);font-weight:700;">${st.due} ${t('decks_due')}</span>`:''}
+    </div>
+  </div>`;
+}
+function wireDeckCardEvents(container){
+  container.querySelectorAll('.deck-card').forEach(el=>{
+    el.addEventListener('click', ()=>{ startStudySession(parseInt(el.dataset.deck)); });
+  });
+}
+
+
+// ===== app_decks.js =====
+// ===== MODAL SYSTEM =====
+function openModal(title, bodyHtml, footerHtml){
+  const existing = document.getElementById('modalRoot'); if(existing) existing.remove();
+  const root = document.createElement('div');
+  root.id='modalRoot';
+  root.style.cssText='position:fixed;inset:0;background:rgba(20,20,25,.45);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px;';
+  root.innerHTML = `<div class="card" style="width:100%;max-width:480px;max-height:88vh;overflow-y:auto;">
+    <div class="pad" style="border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:800;font-size:15px;">${title}</div>
+      <button class="icon-btn" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="pad" id="modalBody">${bodyHtml}</div>
+    ${footerHtml?`<div class="pad" style="border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;">${footerHtml}</div>`:''}
+  </div>`;
+  document.body.appendChild(root);
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  root.addEventListener('click',(e)=>{ if(e.target.id==='modalRoot') closeModal(); });
+  document.addEventListener('keydown', modalEscHandler);
+}
+function modalEscHandler(e){ if(e.key==='Escape') closeModal(); }
+function closeModal(){ const m=document.getElementById('modalRoot'); if(m) m.remove(); document.removeEventListener('keydown', modalEscHandler); }
+
+// ===== DECKS SCREEN =====
+function renderDecksScreen(wrap){
+  const search = APP.deckSearch||'';
+  let decks = CACHE.decks.filter(d=>!d.parentId);
+  if(search) decks = CACHE.decks.filter(d=>d.name.toLowerCase().includes(search.toLowerCase()));
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><div><h1>${t('decks_title')}</h1><div class="sub">${t('decks_sub')}</div></div>
+        <button class="btn" id="newDeckBtn">+ ${t('decks_new')}</button></div>
+      <input type="search" id="deckSearchInput" placeholder="${t('decks_search')}" style="max-width:320px;margin-bottom:18px;" value="${esc(search)}">
+      <div id="deckListWrap"></div>
+    </div>`;
+  document.getElementById('newDeckBtn').addEventListener('click', openNewDeckModal);
+  document.getElementById('deckSearchInput').addEventListener('input', (e)=>{ APP.deckSearch=e.target.value; renderDecksScreen(wrap); });
+  renderDeckList(document.getElementById('deckListWrap'), decks, search);
+}
+function renderDeckList(container, decks, isSearch){
+  if(decks.length===0){ container.innerHTML=`<div class="empty"><div class="ic">▤</div><h3>${t('dash_noDecks')}</h3></div>`; return; }
+  container.innerHTML = decks.map(d=>renderDeckRow(d, isSearch)).join('');
+  container.querySelectorAll('[data-action]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = parseInt(el.closest('[data-deckid]').dataset.deckid);
+      handleDeckAction(el.dataset.action, id);
+    });
+  });
+  container.querySelectorAll('[data-deckrow]').forEach(el=>{
+    el.addEventListener('click', ()=>startStudySession(parseInt(el.dataset.deckrow)));
+  });
+}
+function renderDeckRow(d, isSearch){
+  const st = deckStats(d.id);
+  const children = isSearch ? [] : CACHE.decks.filter(c=>c.parentId===d.id);
+  return `
+    <div class="card pad" style="margin-bottom:10px;" data-deckid="${d.id}">
+      <div style="display:flex;align-items:center;gap:12px;cursor:pointer;" data-deckrow="${d.id}">
+        <div style="flex:1;">
+          <div style="font-weight:800;font-size:14.5px;">${esc(d.name)}</div>
+          <div style="font-size:11.5px;color:var(--ink-faint);margin-top:2px;">
+            ${st.total} ${t('decks_cards')} · ${st.neu} ${t('decks_new_col')} · <span style="color:${st.due>0?'var(--accent)':'inherit'};font-weight:${st.due>0?700:400};">${st.due} ${t('decks_due')}</span> · ${st.learned} ${t('decks_learned')}
+          </div>
+        </div>
+        <div class="btn-row" onclick="event.stopPropagation()">
+          <button class="btn sm secondary" data-action="addcard">+ ${t('decks_addCard')}</button>
+          <button class="btn sm ghost" data-action="rename">${t('decks_rename')}</button>
+          <button class="btn sm ghost" data-action="duplicate">${t('decks_duplicate')}</button>
+          <button class="btn sm danger" data-action="delete">${t('decks_delete')}</button>
+        </div>
+      </div>
+      ${children.length ? `<div style="margin-top:10px;padding-left:18px;border-left:2px solid var(--line);">${children.map(c=>renderDeckRow(c,false)).join('')}</div>` : ''}
+    </div>`;
+}
+async function handleDeckAction(action, id){
+  const deck = CACHE.decks.find(d=>d.id===id);
+  if(action==='rename'){
+    openModal(t('decks_rename'), `<label class="field"><input type="text" id="renameInput" value="${esc(deck.name)}"></label>`,
+      `<button class="btn secondary" onclick="closeModal()">${t('card_cancel')}</button><button class="btn" id="renameSaveBtn">${t('card_save')}</button>`);
+    document.getElementById('renameSaveBtn').addEventListener('click', async ()=>{
+      const val=document.getElementById('renameInput').value.trim();
+      if(val){ await renameDeck(id, val); closeModal(); renderDecksScreen(document.getElementById('screens')); showToast(t('toast_saved')); }
+    });
+  } else if(action==='duplicate'){
+    await duplicateDeck(id); renderDecksScreen(document.getElementById('screens')); showToast(t('toast_saved'));
+  } else if(action==='delete'){
+    if(confirm(t('decks_confirmDelete'))){ await deleteDeck(id); renderDecksScreen(document.getElementById('screens')); renderSidebar(); showToast(t('toast_deleted')); }
+  } else if(action==='addcard'){
+    openCardEditor(null, id);
+  }
+}
+function openNewDeckModal(){
+  const parentOpts = CACHE.decks.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('');
+  openModal(t('decks_new'),
+    `<label class="field"><span class="lbl">${t('decks_name')}</span><input type="text" id="newDeckName" autofocus></label>
+     <label class="field"><span class="lbl">${t('decks_parent')}</span>
+       <select id="newDeckParent"><option value="">${t('decks_none')}</option>${parentOpts}</select></label>`,
+    `<button class="btn secondary" onclick="closeModal()">${t('card_cancel')}</button><button class="btn" id="createDeckBtn">${t('decks_new')}</button>`);
+  document.getElementById('createDeckBtn').addEventListener('click', async ()=>{
+    const name=document.getElementById('newDeckName').value.trim();
+    const parentId=document.getElementById('newDeckParent').value || null;
+    if(!name) return;
+    await createDeck(name, parentId?parseInt(parentId):null);
+    closeModal(); renderDecksScreen(document.getElementById('screens')); renderSidebar();
+    showToast(t('toast_deckCreated'));
+  });
+}
+
+// ===== CARD EDITOR =====
+function openCardEditor(cardId, defaultDeckId){
+  const card = cardId ? CACHE.cards.find(c=>c.id===cardId) : null;
+  const type = card ? card.type : 'basic';
+  const deckOpts = CACHE.decks.map(d=>`<option value="${d.id}" ${((card?card.deckId:defaultDeckId)===d.id)?'selected':''}>${esc(d.name)}</option>`).join('');
+  openModal(card?t('browser_edit'):t('decks_addCard'), `
+    <label class="field"><span class="lbl">${t('card_deck')}</span><select id="cardDeckSel">${deckOpts}</select></label>
+    <label class="field"><span class="lbl">${t('card_type')}</span>
+      <select id="cardTypeSel" ${card?'disabled':''}>
+        <option value="basic">${t('card_basic')}</option>
+        <option value="reverse">${t('card_reverse')}</option>
+        <option value="cloze">${t('card_cloze')}</option>
+        <option value="mcq">${t('card_mcq')}</option>
+        <option value="chinese">${t('card_chinese')}</option>
+      </select></label>
+    <div id="cardTypeFields"></div>
+    <label class="field"><span class="lbl">${t('card_image')}</span><input type="file" id="cardImageInput" accept="image/*"></label>
+    <div id="cardImagePreview"></div>
+    <label class="field"><span class="lbl">${t('card_audio')}</span><input type="file" id="cardAudioInput" accept="audio/*"></label>
+    <label class="field"><span class="lbl">${t('card_tags')}</span><input type="text" id="cardTagsInput" value="${card?esc((card.tags||[]).join(', ')):''}"></label>
+  `, `<button class="btn secondary" onclick="closeModal()">${t('card_cancel')}</button><button class="btn" id="saveCardBtn">${t('card_save')}</button>`);
+
+  document.getElementById('cardTypeSel').value = type;
+  renderCardTypeFields(type, card);
+  document.getElementById('cardTypeSel').addEventListener('change', (e)=>renderCardTypeFields(e.target.value, null));
+
+  let pendingImage = card && card.media ? card.media.imageData : null;
+  let pendingAudio = card && card.media ? card.media.audioData : null;
+  if(pendingImage) document.getElementById('cardImagePreview').innerHTML = `<img src="${pendingImage}" style="max-width:100%;max-height:120px;border-radius:6px;margin:6px 0;">`;
+  document.getElementById('cardImageInput').addEventListener('change', (e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=(ev)=>{ pendingImage=ev.target.result; document.getElementById('cardImagePreview').innerHTML=`<img src="${pendingImage}" style="max-width:100%;max-height:120px;border-radius:6px;margin:6px 0;">`; };
+    r.readAsDataURL(f);
+  });
+  document.getElementById('cardAudioInput').addEventListener('change', (e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=(ev)=>{ pendingAudio=ev.target.result; };
+    r.readAsDataURL(f);
+  });
+
+  document.getElementById('saveCardBtn').addEventListener('click', async ()=>{
+    const deckId = parseInt(document.getElementById('cardDeckSel').value);
+    const chosenType = document.getElementById('cardTypeSel').value;
+    const tags = document.getElementById('cardTagsInput').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const fields = collectCardTypeFields(chosenType);
+    if(!fields) return; // validation failed, message already shown
+    const media = { imageData: pendingImage||null, audioData: pendingAudio||null };
+
+    if(card){
+      card.deckId=deckId; card.fields=fields; card.tags=tags; card.media=media;
+      await updateCard(card);
+      closeModal(); showToast(t('toast_saved'));
+      renderCurrentScreen();
+      return;
+    }
+
+    if(chosenType==='reverse'){
+      const noteId = 'n'+Date.now();
+      const c1 = newCardShell(deckId,'basic',{front:fields.front, back:fields.back},{tags,media,noteId});
+      const c2 = newCardShell(deckId,'basic',{front:fields.back, back:fields.front},{tags,media,noteId});
+      await addCard(c1); await addCard(c2);
+    } else if(chosenType==='cloze'){
+      const nums = extractClozeNumbers(fields.text);
+      if(nums.length===0){ showToast('Add at least one {{c1::...}} cloze'); return; }
+      const noteId = 'n'+Date.now();
+      for(const n of nums){
+        const c = newCardShell(deckId,'cloze',{text:fields.text, clozeNum:n},{tags,media,noteId});
+        await addCard(c);
+      }
+    } else {
+      const c = newCardShell(deckId, chosenType, fields, {tags,media});
+      await addCard(c);
+    }
+    closeModal(); showToast(t('toast_saved'));
+    renderCurrentScreen(true);
+  });
+}
+function renderCardTypeFields(type, card){
+  const box = document.getElementById('cardTypeFields');
+  const f = card ? card.fields : {};
+  if(type==='basic' || type==='reverse'){
+    box.innerHTML = `
+      <label class="field"><span class="lbl">${t('card_front')}</span><textarea id="f_front">${esc(f.front||'')}</textarea></label>
+      <label class="field"><span class="lbl">${t('card_back')}</span><textarea id="f_back">${esc(f.back||'')}</textarea></label>`;
+  } else if(type==='cloze'){
+    box.innerHTML = `<label class="field"><span class="lbl">${t('card_clozeText')}</span><textarea id="f_text" placeholder="Paris is the {{c1::capital}} of {{c2::France}}.">${esc(f.text||'')}</textarea></label>`;
+  } else if(type==='mcq'){
+    box.innerHTML = `
+      <label class="field"><span class="lbl">${t('card_question')}</span><textarea id="f_q">${esc(f.question||'')}</textarea></label>
+      <label class="field"><span class="lbl">${t('card_options')}</span><textarea id="f_opts">${esc((f.options||[]).join('\n'))}</textarea></label>
+      <label class="field"><span class="lbl">${t('card_correctOption')}</span><input type="number" id="f_correct" min="1" value="${(f.correctIndex!=null?f.correctIndex+1:1)}"></label>`;
+  } else if(type==='chinese'){
+    box.innerHTML = `
+      <label class="field"><span class="lbl">${t('card_hanzi')}</span><input type="text" id="f_hanzi" value="${esc(f.hanzi||'')}"></label>
+      <label class="field"><span class="lbl">${t('card_pinyin')}</span><input type="text" id="f_pinyin" value="${esc(f.pinyin||'')}"></label>
+      <label class="field"><span class="lbl">${t('card_translation')}</span><input type="text" id="f_translation" value="${esc(f.translation||'')}"></label>`;
+  }
+}
+function collectCardTypeFields(type){
+  if(type==='basic'||type==='reverse'){
+    const front=document.getElementById('f_front').value.trim(), back=document.getElementById('f_back').value.trim();
+    if(!front||!back){ showToast('Front and Back are required'); return null; }
+    return {front, back};
+  }
+  if(type==='cloze'){
+    const text=document.getElementById('f_text').value.trim();
+    if(!text.includes('{{c')){ showToast('Use {{c1::answer}} syntax'); return null; }
+    return {text};
+  }
+  if(type==='mcq'){
+    const q=document.getElementById('f_q').value.trim();
+    const opts=document.getElementById('f_opts').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const correct=parseInt(document.getElementById('f_correct').value)-1;
+    if(!q||opts.length<2){ showToast('Question and at least 2 options required'); return null; }
+    return {question:q, options:opts, correctIndex: Math.max(0,Math.min(correct,opts.length-1))};
+  }
+  if(type==='chinese'){
+    const hanzi=document.getElementById('f_hanzi').value.trim();
+    const pinyin=document.getElementById('f_pinyin').value.trim();
+    const translation=document.getElementById('f_translation').value.trim();
+    if(!hanzi||!translation){ showToast('Hanzi and Translation are required'); return null; }
+    return {hanzi, pinyin, translation};
+  }
+  return null;
+}
+
+
+// ===== app_study.js =====
+// ===== STUDY SESSION =====
+function buildStudyQueue(deckId){
+  const ids = deckAndDescendantIds(deckId);
+  let cards = CACHE.cards.filter(c=>ids.has(c.deckId));
+  const due = cards.filter(c=>c.state!=='new' && isDue(c));
+  const neu = cards.filter(c=>c.state==='new').slice(0, APP.newLimit);
+  const learning = cards.filter(c=>c.state==='learning' && !isDue(c));
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+  const queue = shuffle(due.slice()).concat(shuffle(neu.slice())).concat(shuffle(learning.slice()));
+  return queue.slice(0, APP.reviewLimit);
+}
+
+function startStudySession(deckId){
+  const queue = buildStudyQueue(deckId);
+  APP.studySession = { deckId, queue, pos:0, sessionCorrect:0, startTime:Date.now() };
+  navigateTo('study');
+}
+
+function renderStudyScreen(wrap){
+  const s = APP.studySession;
+  if(!s.deckId || s.queue.length===0 || s.pos>=s.queue.length){
+    renderStudyChooser(wrap);
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <button class="btn ghost sm" id="exitStudyBtn">← ${t('study_backToDecks')}</button>
+        <div style="flex:1;height:6px;background:var(--bg-sunken);border-radius:3px;overflow:hidden;"><div id="studyProgBar" style="height:100%;background:var(--accent);width:0%;"></div></div>
+        <div style="font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums;" id="studyPosLbl"></div>
+      </div>
+      <div id="studyCardStage"></div>
+      <div style="text-align:center;font-size:11px;color:var(--ink-faint);margin-top:16px;">${t('keyboard_hint')}</div>
+    </div>`;
+  document.getElementById('exitStudyBtn').addEventListener('click', ()=>{ APP.studySession.deckId=null; navigateTo('decks'); });
+  renderStudyCard();
+}
+function renderStudyChooser(wrap){
+  const decks = CACHE.decks.filter(d=>!d.parentId);
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><h1>${t('study_title')}</h1></div>
+      <p style="color:var(--ink-faint);font-size:13px;margin-bottom:16px;">${t('study_chooseDeck')}</p>
+      <div class="grid grid-3" id="studyDeckGrid"></div>
+    </div>`;
+  const g = document.getElementById('studyDeckGrid');
+  if(decks.length===0){ g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><div class="ic">▶</div><h3>${t('dash_noDecks')}</h3></div>`; return; }
+  g.innerHTML = decks.map(d=>deckCardHtml(d)).join('');
+  wireDeckCardEvents(g);
+}
+
+function studyProgressUpdate(){
+  const s=APP.studySession;
+  const pct = Math.round(s.pos/s.queue.length*100);
+  const bar=document.getElementById('studyProgBar'); if(bar) bar.style.width=pct+'%';
+  const lbl=document.getElementById('studyPosLbl'); if(lbl) lbl.textContent=`${Math.min(s.pos+1,s.queue.length)}/${s.queue.length}`;
+}
+
+let studyKeyHandler = null;
+document.addEventListener('keydown', (e)=>{ if(studyKeyHandler) studyKeyHandler(e); });
+
+function gradeCardBtnRow(){
+  return `<div class="grid grid-4" style="max-width:480px;margin:18px auto 0;gap:8px;">
+    <button class="btn" style="background:var(--again);" data-grade="0">${t('study_again')}</button>
+    <button class="btn" style="background:var(--hard);" data-grade="1">${t('study_hard')}</button>
+    <button class="btn" style="background:var(--goodbtn);" data-grade="2">${t('study_good')}</button>
+    <button class="btn" style="background:var(--easy);" data-grade="3">${t('study_easy')}</button>
+  </div>`;
+}
+function wireGradeButtons(container, onGrade){
+  container.querySelectorAll('[data-grade]').forEach(b=>b.addEventListener('click', ()=>onGrade(parseInt(b.dataset.grade))));
+  studyKeyHandler = (e)=>{
+    if(['1','2','3','4'].includes(e.key)){ onGrade(parseInt(e.key)-1); }
+  };
+}
+
+async function commitGrade(card, grade){
+  scheduleCard(card, grade);
+  await updateCard(card);
+  await logReview(card.id, grade);
+  const s=APP.studySession; s.pos++;
+  studyKeyHandler=null;
+  if(s.pos>=s.queue.length){ renderSessionComplete(); }
+  else { studyProgressUpdate(); renderStudyCard(); }
+}
+function renderSessionComplete(){
+  const s=APP.studySession;
+  const stage=document.getElementById('studyCardStage');
+  stage.innerHTML = `<div class="card pad" style="text-align:center;padding:50px 20px;">
+    <div style="font-size:38px;margin-bottom:10px;">🎉</div>
+    <h2 style="margin:0 0 8px;">${t('study_sessionDone')}</h2>
+    <p style="color:var(--ink-faint);font-size:13px;">${s.queue.length} ${t('study_reviewedCount')}</p>
+    <button class="btn" style="margin-top:16px;" id="studyDoneBtn">${t('study_backToDecks')}</button>
+  </div>`;
+  document.getElementById('studyProgBar').style.width='100%';
+  document.getElementById('studyDoneBtn').addEventListener('click', ()=>{ APP.studySession.deckId=null; navigateTo('decks'); renderSidebar(); });
+}
+
+function renderStudyCard(){
+  studyProgressUpdate();
+  const s=APP.studySession;
+  const card = s.queue[s.pos];
+  const stage = document.getElementById('studyCardStage');
+  studyKeyHandler=null;
+  if(card.type==='basic') renderBasicStudy(card, stage);
+  else if(card.type==='cloze') renderClozeStudy(card, stage);
+  else if(card.type==='mcq') renderMcqStudy(card, stage);
+  else if(card.type==='chinese') renderChineseStudy(card, stage);
+}
+function mediaHtml(card){
+  let h='';
+  if(card.media && card.media.imageData) h += `<img src="${card.media.imageData}" style="max-width:100%;max-height:220px;border-radius:8px;margin-bottom:12px;">`;
+  if(card.media && card.media.audioData) h += `<audio controls src="${card.media.audioData}" style="margin-bottom:12px;width:100%;max-width:320px;"></audio>`;
+  return h;
+}
+function stageWrap(inner){ return `<div class="card pad" style="min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;">${inner}</div>`; }
+
+function renderBasicStudy(card, stage){
+  stage.innerHTML = stageWrap(`
+    ${mediaHtml(card)}
+    <div style="font-size:19px;font-weight:600;max-width:480px;">${esc(card.fields.front)}</div>
+    <div id="answerBox" class="hidden" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);width:100%;max-width:480px;">
+      <div style="font-size:17px;color:var(--accent);">${esc(card.fields.back)}</div>
+    </div>
+    <button class="btn secondary" id="revealBtn" style="margin-top:20px;">${t('study_showAnswer')}</button>
+    <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
+  `);
+  wireReveal(card, stage);
+}
+function renderChineseStudy(card, stage){
+  stage.innerHTML = stageWrap(`
+    ${mediaHtml(card)}
+    <div style="font-size:44px;font-weight:700;font-family:'PingFang SC','Microsoft YaHei',sans-serif;">${esc(card.fields.hanzi)}</div>
+    <div id="answerBox" class="hidden" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);width:100%;max-width:480px;">
+      <div style="font-size:18px;color:var(--accent);font-weight:600;">${esc(card.fields.pinyin||'')}</div>
+      <div style="font-size:16px;margin-top:4px;">${esc(card.fields.translation)}</div>
+    </div>
+    <button class="btn secondary" id="revealBtn" style="margin-top:20px;">${t('study_showAnswer')}</button>
+    <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
+  `);
+  wireReveal(card, stage);
+}
+function renderClozeStudy(card, stage){
+  const shown = renderCloze(card.fields.text, card.fields.clozeNum, false);
+  const revealedHtml = renderCloze(card.fields.text, card.fields.clozeNum, true);
+  stage.innerHTML = stageWrap(`
+    ${mediaHtml(card)}
+    <div id="clozeShown" style="font-size:18px;line-height:1.6;max-width:480px;">${shown}</div>
+    <div id="answerBox" class="hidden" style="margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);width:100%;max-width:480px;">
+      <div style="font-size:18px;line-height:1.6;color:var(--accent);">${revealedHtml}</div>
+    </div>
+    <button class="btn secondary" id="revealBtn" style="margin-top:20px;">${t('study_showAnswer')}</button>
+    <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
+  `);
+  stage.querySelectorAll('.cloze-blank').forEach(el=>el.style.cssText='background:var(--accent-soft);color:var(--accent);padding:1px 8px;border-radius:4px;font-weight:700;');
+  wireReveal(card, stage);
+}
+function wireReveal(card, stage){
+  const reveal = ()=>{
+    document.getElementById('answerBox').classList.remove('hidden');
+    document.getElementById('revealBtn').classList.add('hidden');
+    document.getElementById('gradeArea').classList.remove('hidden');
+    stage.querySelectorAll('.cloze-answer').forEach(el=>el.style.cssText='background:var(--good-soft);color:var(--good);padding:1px 8px;border-radius:4px;font-weight:700;');
+    studyKeyHandler=null;
+    wireGradeButtons(stage, (g)=>commitGrade(card,g));
+  };
+  document.getElementById('revealBtn').addEventListener('click', reveal);
+  studyKeyHandler = (e)=>{ if(e.code==='Space'){ e.preventDefault(); reveal(); } };
+}
+function renderMcqStudy(card, stage){
+  const opts = card.fields.options;
+  stage.innerHTML = stageWrap(`
+    ${mediaHtml(card)}
+    <div style="font-size:18px;font-weight:600;max-width:480px;margin-bottom:16px;">${esc(card.fields.question)}</div>
+    <div id="mcqOpts" style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px;"></div>
+    <div id="gradeArea" class="hidden" style="width:100%;">${gradeCardBtnRow()}</div>
+  `);
+  const box = document.getElementById('mcqOpts');
+  opts.forEach((o,i)=>{
+    const el = document.createElement('button');
+    el.className='btn secondary'; el.style.textAlign='left'; el.style.justifyContent='flex-start';
+    el.textContent = o;
+    el.addEventListener('click', ()=>{
+      const correct = i===card.fields.correctIndex;
+      box.querySelectorAll('button').forEach((b,bi)=>{
+        b.disabled=true;
+        if(bi===card.fields.correctIndex) b.style.cssText+='background:var(--good-soft);color:var(--good);border-color:var(--good);';
+      });
+      if(!correct) el.style.cssText+='background:var(--bad-soft);color:var(--bad);border-color:var(--bad);';
+      document.getElementById('gradeArea').classList.remove('hidden');
+      wireGradeButtons(stage, (g)=>commitGrade(card,g));
+      // pre-suggest grade based on correctness but let user confirm
+    });
+    box.appendChild(el);
+  });
+}
+
+
+// ===== app_stats_browser.js =====
+// ===== STATISTICS =====
+function renderStatsScreen(wrap){
+  const totalReviews = CACHE.reviews.length;
+  const correct = CACHE.reviews.filter(r=>r.grade>0).length;
+  const accuracy = totalReviews ? Math.round(correct/totalReviews*100) : 0;
+  const avgEase = CACHE.cards.length ? (CACHE.cards.reduce((s,c)=>s+(c.ease||2.5),0)/CACHE.cards.length).toFixed(2) : '2.50';
+  const byState = {new:0, learning:0, review:0, mastered:0};
+  CACHE.cards.forEach(c=>{ byState[cardStateLabel(c)]++; });
+
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><h1>${t('stats_title')}</h1></div>
+      <div class="grid grid-4" style="margin-bottom:22px;">
+        <div class="card stat-box"><div class="big">${totalReviews}</div><div class="lbl">${t('stats_totalReviews')}</div></div>
+        <div class="card stat-box"><div class="big">${accuracy}%</div><div class="lbl">${t('stats_accuracy')}</div></div>
+        <div class="card stat-box"><div class="big">${avgEase}</div><div class="lbl">${t('stats_avgEase')}</div></div>
+        <div class="card stat-box"><div class="big">🔥 ${computeStreak()}</div><div class="lbl">${t('dash_streak')}</div></div>
+      </div>
+      <div class="card pad" style="margin-bottom:22px;">
+        <div style="font-weight:800;font-size:13.5px;margin-bottom:14px;">${t('stats_cardsByState')}</div>
+        <div class="grid grid-4">
+          <div><div class="badge new">${t('stats_new')}</div><div style="font-size:20px;font-weight:800;margin-top:6px;">${byState.new}</div></div>
+          <div><div class="badge learn">${t('stats_learning')}</div><div style="font-size:20px;font-weight:800;margin-top:6px;">${byState.learning}</div></div>
+          <div><div class="badge review">${t('stats_review')}</div><div style="font-size:20px;font-weight:800;margin-top:6px;">${byState.review}</div></div>
+          <div><div class="badge review" style="background:var(--good-soft);color:var(--good);">${t('stats_mastered')}</div><div style="font-size:20px;font-weight:800;margin-top:6px;">${byState.mastered}</div></div>
+        </div>
+      </div>
+      <div class="card pad">
+        <div style="font-weight:800;font-size:13.5px;margin-bottom:14px;">${t('stats_heatmap')}</div>
+        <div id="heatmapWrap" style="overflow-x:auto;"></div>
+      </div>
+    </div>`;
+  renderHeatmap(document.getElementById('heatmapWrap'));
+}
+function renderHeatmap(container){
+  const counts = {};
+  CACHE.reviews.forEach(r=>{ const d=new Date(r.timestamp).toISOString().slice(0,10); counts[d]=(counts[d]||0)+1; });
+  const today = new Date();
+  const days = [];
+  for(let i=364;i>=0;i--){ const d=new Date(today); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const max = Math.max(1, ...Object.values(counts));
+  function colorFor(n){
+    if(n===0) return 'var(--bg-sunken)';
+    const pct = n/max;
+    if(pct<0.25) return 'var(--good-soft)';
+    if(pct<0.5) return '#8FD9B6';
+    if(pct<0.75) return '#4FBE8A';
+    return 'var(--good)';
+  }
+  const weeks = [];
+  for(let i=0;i<days.length;i+=7) weeks.push(days.slice(i,i+7));
+  container.innerHTML = `<div style="display:flex;gap:3px;">
+    ${weeks.map(week=>`<div style="display:flex;flex-direction:column;gap:3px;">
+      ${week.map(d=>`<div title="${d}: ${counts[d]||0}" style="width:11px;height:11px;border-radius:2px;background:${colorFor(counts[d]||0)};"></div>`).join('')}
+    </div>`).join('')}
+  </div>`;
+}
+
+// ===== CARD BROWSER =====
+function renderBrowserScreen(wrap){
+  const f = APP.browserFilter;
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><h1>${t('browser_title')}</h1></div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <input type="search" id="browserSearch" placeholder="${t('browser_search')}" style="max-width:260px;" value="${esc(f.search)}">
+        <select id="browserDeckFilter" style="max-width:220px;">
+          <option value="">${t('browser_allDecks')}</option>
+          ${CACHE.decks.map(d=>`<option value="${d.id}" ${f.deckId==d.id?'selected':''}>${esc(d.name)}</option>`).join('')}
+        </select>
+        <div style="flex:1;"></div>
+        <button class="btn sm secondary" id="browserSelectAllBtn">${t('browser_selectAll')}</button>
+        <button class="btn sm danger" id="browserBulkDeleteBtn">${t('browser_bulkDelete')}</button>
+      </div>
+      <div class="card" style="overflow-x:auto;">
+        <table id="browserTable">
+          <thead><tr><th></th><th>${t('browser_front')}</th><th>${t('browser_back')}</th><th>${t('browser_deck')}</th><th>${t('browser_tags')}</th><th>${t('browser_due')}</th><th></th></tr></thead>
+          <tbody id="browserTbody"></tbody>
+        </table>
+      </div>
+      <div id="browserPager" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px;"></div>
+    </div>`;
+  document.getElementById('browserSearch').addEventListener('input', (e)=>{ f.search=e.target.value; f.page=0; renderBrowserRows(); });
+  document.getElementById('browserDeckFilter').addEventListener('change', (e)=>{ f.deckId=e.target.value?parseInt(e.target.value):null; f.page=0; renderBrowserRows(); });
+  document.getElementById('browserSelectAllBtn').addEventListener('click', ()=>{
+    const rows = filteredBrowserCards();
+    if(f.selected.size===rows.length) f.selected.clear(); else rows.forEach(c=>f.selected.add(c.id));
+    renderBrowserRows();
+  });
+  document.getElementById('browserBulkDeleteBtn').addEventListener('click', async ()=>{
+    if(f.selected.size===0) return;
+    if(!confirm(`${t('browser_bulkDelete')} (${f.selected.size})?`)) return;
+    for(const id of f.selected) await deleteCard(id);
+    f.selected.clear(); renderBrowserRows(); renderSidebar(); showToast(t('toast_deleted'));
+  });
+  renderBrowserRows();
+}
+function cardFrontText(c){
+  if(c.type==='basic') return c.fields.front;
+  if(c.type==='cloze') return c.fields.text.replace(/\{\{c\d+::(.*?)(::.*?)?\}\}/g,'[$1]');
+  if(c.type==='mcq') return c.fields.question;
+  if(c.type==='chinese') return c.fields.hanzi;
+  return '';
+}
+function cardBackText(c){
+  if(c.type==='basic') return c.fields.back;
+  if(c.type==='cloze') return '(cloze)';
+  if(c.type==='mcq') return c.fields.options[c.fields.correctIndex]||'';
+  if(c.type==='chinese') return c.fields.translation;
+  return '';
+}
+function filteredBrowserCards(){
+  const f=APP.browserFilter;
+  let cards = CACHE.cards;
+  if(f.deckId) cards = cards.filter(c=>c.deckId===f.deckId);
+  if(f.search){
+    const s=f.search.toLowerCase();
+    cards = cards.filter(c=> (cardFrontText(c)||'').toLowerCase().includes(s) || (cardBackText(c)||'').toLowerCase().includes(s) || (c.tags||[]).join(' ').toLowerCase().includes(s));
+  }
+  return cards;
+}
+function renderBrowserRows(){
+  const f=APP.browserFilter;
+  if(f.page==null) f.page=0;
+  const PAGE_SIZE=50;
+  const cards = filteredBrowserCards();
+  const tbody = document.getElementById('browserTbody');
+  const pager = document.getElementById('browserPager');
+  if(cards.length===0){ tbody.innerHTML=`<tr><td colspan="7"><div class="empty">${t('browser_noResults')}</div></td></tr>`; if(pager) pager.innerHTML=''; return; }
+  const totalPages = Math.max(1, Math.ceil(cards.length/PAGE_SIZE));
+  f.page = Math.min(f.page, totalPages-1);
+  const pageCards = cards.slice(f.page*PAGE_SIZE, (f.page+1)*PAGE_SIZE);
+  tbody.innerHTML = pageCards.map(c=>{
+    const deck = CACHE.decks.find(d=>d.id===c.deckId);
+    return `<tr class="${f.selected.has(c.id)?'row-selected':''}" data-cid="${c.id}">
+      <td><input type="checkbox" data-sel="${c.id}" ${f.selected.has(c.id)?'checked':''}></td>
+      <td style="max-width:220px;">${esc(cardFrontText(c)).slice(0,80)}</td>
+      <td style="max-width:220px;">${esc(cardBackText(c)).slice(0,80)}</td>
+      <td>${deck?esc(deck.name):''}</td>
+      <td>${(c.tags||[]).map(tg=>`<span class="tag-chip">${esc(tg)}</span>`).join(' ')}</td>
+      <td style="font-size:11px;color:var(--ink-faint);">${c.state==='new'?t('stats_new'):fmtDate(c.due)}</td>
+      <td><button class="btn sm ghost" data-editcid="${c.id}">${t('browser_edit')}</button></td>
+    </tr>`;
+  }).join('');
+  if(pager){
+    pager.innerHTML = `
+      <span style="font-size:12px;color:var(--ink-faint);">${cards.length} ${t('decks_cards')} — ${f.page*PAGE_SIZE+1}-${Math.min((f.page+1)*PAGE_SIZE,cards.length)}</span>
+      <div class="btn-row">
+        <button class="btn sm secondary" id="pagerPrev" ${f.page===0?'disabled':''}>‹ Prev</button>
+        <span style="font-size:12px;padding:6px 4px;">${f.page+1} / ${totalPages}</span>
+        <button class="btn sm secondary" id="pagerNext" ${f.page>=totalPages-1?'disabled':''}>Next ›</button>
+      </div>`;
+    const prevBtn=document.getElementById('pagerPrev'); if(prevBtn) prevBtn.addEventListener('click',()=>{ f.page--; renderBrowserRows(); });
+    const nextBtn=document.getElementById('pagerNext'); if(nextBtn) nextBtn.addEventListener('click',()=>{ f.page++; renderBrowserRows(); });
+  }
+  tbody.querySelectorAll('[data-sel]').forEach(cb=>cb.addEventListener('change', ()=>{
+    const id=parseInt(cb.dataset.sel);
+    if(cb.checked) f.selected.add(id); else f.selected.delete(id);
+    cb.closest('tr').classList.toggle('row-selected', cb.checked);
+  }));
+  tbody.querySelectorAll('[data-editcid]').forEach(b=>b.addEventListener('click', ()=>openCardEditor(parseInt(b.dataset.editcid))));
+}
+
+
+// ===== app_io_settings.js =====
+// ===== IMPORT / EXPORT =====
+function buildFullExport(){
+  return {
+    formatVersion: 1,
+    exportedAt: Date.now(),
+    decks: CACHE.decks,
+    cards: CACHE.cards,
+    reviews: CACHE.reviews,
+    settings: CACHE.settings,
+  };
+}
+function downloadJson(obj, filename){
+  const blob = new Blob([JSON.stringify(obj)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+function renderIOScreen(wrap){
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><h1>${t('io_title')}</h1></div>
+      <div class="grid grid-2">
+        <div class="card pad">
+          <div style="font-weight:800;margin-bottom:10px;">${t('io_exportAll')}</div>
+          <button class="btn" id="exportAllBtn">⬇ ${t('io_exportAll')}</button>
+          <button class="btn secondary" id="sendTelegramBtn" style="margin-left:8px;">✈ Send via Telegram</button>
+          <div style="margin-top:18px;font-weight:800;font-size:13px;">${t('io_selectDeckExport')}</div>
+          <select id="exportDeckSel" style="margin:8px 0;">${CACHE.decks.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('')}</select>
+          <button class="btn secondary" id="exportDeckBtn">${t('io_exportDeck')}</button>
+        </div>
+        <div class="card pad">
+          <div style="font-weight:800;margin-bottom:10px;">${t('io_import')}</div>
+          <div id="dropZone" style="border:2px dashed var(--line);border-radius:10px;padding:30px 14px;text-align:center;cursor:pointer;font-size:12.5px;color:var(--ink-faint);">
+            ${t('io_dropHint')}
+          </div>
+          <input type="file" id="importFileInput" accept=".json" style="display:none;">
+          <div id="importMsg" style="margin-top:10px;font-size:12.5px;"></div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('exportAllBtn').addEventListener('click', ()=>downloadJson(buildFullExport(), `memocards_backup_${Date.now()}.json`));
+  document.getElementById('sendTelegramBtn').addEventListener('click', sendMyDataToTelegram);
+  document.getElementById('exportDeckBtn').addEventListener('click', ()=>{
+    const id = parseInt(document.getElementById('exportDeckSel').value);
+    const ids = deckAndDescendantIds(id);
+    const data = { formatVersion:1, exportedAt:Date.now(), decks: CACHE.decks.filter(d=>ids.has(d.id)), cards: CACHE.cards.filter(c=>ids.has(c.deckId)), reviews:[], settings:{} };
+    downloadJson(data, `deck_export_${Date.now()}.json`);
+  });
+  const dz = document.getElementById('dropZone');
+  const fi = document.getElementById('importFileInput');
+  dz.addEventListener('click', ()=>fi.click());
+  dz.addEventListener('dragover', (e)=>{ e.preventDefault(); dz.style.borderColor='var(--accent)'; });
+  dz.addEventListener('dragleave', ()=>{ dz.style.borderColor='var(--line)'; });
+  dz.addEventListener('drop', (e)=>{ e.preventDefault(); dz.style.borderColor='var(--line)'; if(e.dataTransfer.files[0]) handleImportFile(e.dataTransfer.files[0]); });
+  fi.addEventListener('change', (e)=>{ if(e.target.files[0]) handleImportFile(e.target.files[0]); });
+}
+async function handleImportFile(file){
+  const msg = document.getElementById('importMsg');
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if(!data || !Array.isArray(data.decks) || !Array.isArray(data.cards)){
+      msg.innerHTML = `<span style="color:var(--bad);">${t('io_importError')}</span>`; return;
+    }
+    const idMapDeck = {};
+    for(const d of data.decks){
+      const oldId = d.id;
+      const nd = {name:d.name, parentId:null, created:d.created||Date.now(), description:d.description||''};
+      const newId = await idbPut('decks', nd); nd.id=newId; CACHE.decks.push(nd);
+      idMapDeck[oldId]=newId;
+    }
+    // second pass fix parentIds
+    for(const d of data.decks){
+      if(d.parentId && idMapDeck[d.parentId]){
+        const nd = CACHE.decks.find(x=>x.id===idMapDeck[d.id]);
+        if(nd){ nd.parentId = idMapDeck[d.parentId]; await idbPut('decks', nd); }
+      }
+    }
+    for(const c of data.cards){
+      const nc = {...c}; delete nc.id;
+      nc.deckId = idMapDeck[c.deckId] || CACHE.decks[0]?.id;
+      const newId = await idbPut('cards', nc); nc.id=newId; CACHE.cards.push(nc);
+    }
+    if(Array.isArray(data.reviews)){
+      for(const r of data.reviews){ const nr={...r}; delete nr.id; const nid=await idbPut('reviews', nr); nr.id=nid; CACHE.reviews.push(nr); }
+    }
+    msg.innerHTML = `<span style="color:var(--good);">${t('io_importSuccess')} (${data.decks.length} decks, ${data.cards.length} cards)</span>`;
+    renderSidebar();
+  }catch(err){
+    msg.innerHTML = `<span style="color:var(--bad);">${t('io_importError')}</span>`;
+  }
+}
+
+// ===== SETTINGS =====
+function renderSettingsScreen(wrap){
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><h1>${t('settings_title')}</h1></div>
+      <div class="card pad" style="max-width:520px;">
+        <label class="field"><span class="lbl">${t('settings_newLimit')}</span><input type="number" id="setNewLimit" value="${APP.newLimit}" min="0"></label>
+        <label class="field"><span class="lbl">${t('settings_reviewLimit')}</span><input type="number" id="setReviewLimit" value="${APP.reviewLimit}" min="0"></label>
+        <label class="field"><span class="lbl">${t('settings_theme')}</span>
+          <select id="setTheme"><option value="light" ${APP.theme==='light'?'selected':''}>${t('settings_light')}</option><option value="dark" ${APP.theme==='dark'?'selected':''}>${t('settings_dark')}</option></select></label>
+        <label class="field"><span class="lbl">${t('settings_fontSize')}</span>
+          <select id="setFont"><option value="sm" ${APP.fontSize==='sm'?'selected':''}>${t('settings_small')}</option><option value="md" ${APP.fontSize==='md'?'selected':''}>${t('settings_medium')}</option><option value="lg" ${APP.fontSize==='lg'?'selected':''}>${t('settings_large')}</option></select></label>
+        <label class="field"><span class="lbl">${t('settings_language')}</span>
+          <select id="setLang"><option value="en" ${currentLang==='en'?'selected':''}>English</option><option value="zh" ${currentLang==='zh'?'selected':''}>中文</option><option value="uz" ${currentLang==='uz'?'selected':''}>O'zbek</option></select></label>
+        <label class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="setTimer" style="width:auto;" ${APP.showTimer?'checked':''}><span class="lbl" style="margin:0;">${t('settings_timer')}</span></label>
+        <label class="field"><span class="lbl">${t('settings_autoBackup')}</span>
+          <select id="setAutoBackup"><option value="never" ${APP.autoBackup==='never'?'selected':''}>${t('settings_never')}</option><option value="daily" ${APP.autoBackup==='daily'?'selected':''}>${t('settings_daily')}</option><option value="weekly" ${APP.autoBackup==='weekly'?'selected':''}>${t('settings_weekly')}</option></select></label>
+        <button class="btn" id="saveSettingsBtn" style="margin-top:8px;">${t('card_save')}</button>
+      </div>
+    </div>`;
+  document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
+    APP.newLimit = parseInt(document.getElementById('setNewLimit').value)||20;
+    APP.reviewLimit = parseInt(document.getElementById('setReviewLimit').value)||200;
+    APP.fontSize = document.getElementById('setFont').value;
+    APP.showTimer = document.getElementById('setTimer').checked;
+    APP.autoBackup = document.getElementById('setAutoBackup').value;
+    const theme = document.getElementById('setTheme').value;
+    const lang = document.getElementById('setLang').value;
+    APP.theme = theme; document.documentElement.setAttribute('data-theme', theme);
+    document.body.className = 'font-'+APP.fontSize;
+    currentLang = lang;
+    await Promise.all([
+      setSetting('newLimit',APP.newLimit), setSetting('reviewLimit',APP.reviewLimit),
+      setSetting('theme',theme), setSetting('fontSize',APP.fontSize), setSetting('lang',lang),
+      setSetting('showTimer',APP.showTimer), setSetting('autoBackup',APP.autoBackup),
+    ]);
+    showToast(t('toast_saved'));
+    renderSidebar(); renderSettingsScreen(document.getElementById('screens'));
+  });
+}
+
+// ===== BACKUP MANAGER =====
+async function createBackupSnapshot(){
+  const data = buildFullExport();
+  const rec = { timestamp: Date.now(), data };
+  await idbPut('backups', rec);
+}
+async function renderBackupScreen(wrap){
+  const backups = (await idbGetAll('backups')).sort((a,b)=>b.timestamp-a.timestamp);
+  wrap.innerHTML = `
+    <div class="screen active">
+      <div class="pagehead"><div><h1>${t('backup_title')}</h1></div>
+        <button class="btn" id="createBackupBtn">${t('backup_create')}</button></div>
+      <div class="card">
+        ${backups.length===0?`<div class="empty">${t('backup_none')}</div>`:`
+        <table><thead><tr><th>Date</th><th>Decks</th><th>Cards</th><th></th></tr></thead>
+        <tbody>${backups.map(b=>`<tr><td>${new Date(b.timestamp).toLocaleString()}</td><td>${b.data.decks.length}</td><td>${b.data.cards.length}</td>
+          <td class="btn-row"><button class="btn sm secondary" data-restore="${b.id}">${t('backup_restore')}</button><button class="btn sm danger" data-delbackup="${b.id}">${t('backup_delete')}</button></td></tr>`).join('')}
+        </tbody></table>`}
+      </div>
+    </div>`;
+  document.getElementById('createBackupBtn').addEventListener('click', async ()=>{ await createBackupSnapshot(); showToast(t('toast_saved')); renderBackupScreen(wrap); });
+  wrap.querySelectorAll('[data-restore]').forEach(b=>b.addEventListener('click', async ()=>{
+    if(!confirm(t('backup_confirmRestore'))) return;
+    const rec = backups.find(x=>x.id===parseInt(b.dataset.restore));
+    await restoreFullData(rec.data);
+    showToast(t('toast_saved')); navigateTo('dashboard');
+  }));
+  wrap.querySelectorAll('[data-delbackup]').forEach(b=>b.addEventListener('click', async ()=>{
+    await idbDelete('backups', parseInt(b.dataset.delbackup)); renderBackupScreen(wrap);
+  }));
+}
+async function restoreFullData(data){
+  await idbClear('decks'); await idbClear('cards'); await idbClear('reviews');
+  for(const d of data.decks) await idbPut('decks', d);
+  for(const c of data.cards) await idbPut('cards', c);
+  for(const r of (data.reviews||[])) await idbPut('reviews', r);
+  await loadAllFromDB();
+}
+
+
+// ===== app_init.js =====
+// ===== TELEGRAM INTEGRATION =====
+// FILL THESE IN after deploying telegram-worker.js to Cloudflare (see that file's header comment):
+const TELEGRAM_CONFIG = {
+  botUsername: '',      // ← ANIQLASHTIRISH KERAK: bot username'ingizni shu yerga yozing (@ belgisisiz)
+  relayUrl: 'https://rough-glade-7019.narzullayevumidjon976.workers.dev',
+};
+let telegramUserInfo = null; // populated after successful Telegram login, kept in localStorage for "send my data" feature
+
+function loadTelegramUserInfo(){
+  try{ const raw=localStorage.getItem('mc_tg_user'); telegramUserInfo = raw?JSON.parse(raw):null; }catch(e){}
+}
+function saveTelegramUserInfo(u){
+  telegramUserInfo=u;
+  try{ localStorage.setItem('mc_tg_user', JSON.stringify(u)); }catch(e){}
+}
+
+async function notifyAdmin(eventType, extra){
+  if(!TELEGRAM_CONFIG.relayUrl) return; // relay not configured yet — silently skip
+  try{
+    await fetch(TELEGRAM_CONFIG.relayUrl + '/notify-admin', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ eventType, telegramUser: telegramUserInfo, userAgent: navigator.userAgent, extra }),
+    });
+  }catch(e){ /* best-effort only — never block login on notification failure */ }
+}
+
+async function sendMyDataToTelegram(){
+  if(!telegramUserInfo){ showToast('Please log in with Telegram first to enable this.'); return; }
+  if(!TELEGRAM_CONFIG.relayUrl){ showToast('Telegram relay not configured yet.'); return; }
+  const data = buildFullExport();
+  try{
+    const res = await fetch(TELEGRAM_CONFIG.relayUrl + '/send-user-data', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ telegramChatId: telegramUserInfo.id, filename:`memocards_backup_${Date.now()}.json`, jsonContent: JSON.stringify(data) }),
+    });
+    const r = await res.json();
+    showToast(r.ok ? 'Sent! Check your Telegram.' : ('Failed: '+(r.error||'unknown, did you start a chat with the bot first?')));
+  }catch(e){ showToast('Could not reach relay.'); }
+}
+
+function renderTelegramWidget(){
+  const box = document.getElementById('tgWidgetContainer');
+  const hint = document.getElementById('tgWidgetHint');
+  if(!TELEGRAM_CONFIG.botUsername || !TELEGRAM_CONFIG.relayUrl){
+    document.getElementById('tgWidgetDivider').style.display='none';
+    hint.textContent='';
+    return;
+  }
+  window.onTelegramAuth = async (user)=>{
+    hint.textContent='Verifying...';
+    try{
+      const res = await fetch(TELEGRAM_CONFIG.relayUrl + '/verify-login', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(user)
+      });
+      const r = await res.json();
+      if(!r.ok){ hint.textContent='Verification failed. Try again.'; return; }
+      saveTelegramUserInfo(r.user);
+      await notifyAdmin('login');
+      tryUnlock(GATE_PASSWORD, true); // proceed same as normal unlock; skip duplicate notify
+    }catch(e){ hint.textContent='Could not reach relay server.'; }
+  };
+  const s = document.createElement('script');
+  s.src='https://telegram.org/js/telegram-widget.js?22';
+  s.setAttribute('data-telegram-login', TELEGRAM_CONFIG.botUsername);
+  s.setAttribute('data-size','large');
+  s.setAttribute('data-onauth','onTelegramAuth(user)');
+  s.setAttribute('data-request-access','write');
+  box.appendChild(s);
+}
+
+
+const GATE_PASSWORD = 'kongzixueyuan';
+const GATE_SESSION_KEY = 'memocards_unlocked';
+function tryUnlock(pw, viaTelegram){
+  if(pw === GATE_PASSWORD){
+    try{ sessionStorage.setItem(GATE_SESSION_KEY, '1'); }catch(e){}
+    document.getElementById('pwGate').style.display='none';
+    document.getElementById('appShell').style.display='';
+    if(!viaTelegram) notifyAdmin('password');
+    initApp();
+    return true;
+  }
+  document.getElementById('pwGateError').textContent = 'Incorrect password';
+  document.getElementById('pwGateInput').value='';
+  document.getElementById('pwGateInput').focus();
+  return false;
+}
+function setupPasswordGate(){
+  loadTelegramUserInfo();
+  renderTelegramWidget();
+  let alreadyUnlocked=false;
+  try{ alreadyUnlocked = sessionStorage.getItem(GATE_SESSION_KEY)==='1'; }catch(e){}
+  if(alreadyUnlocked){
+    document.getElementById('pwGate').style.display='none';
+    document.getElementById('appShell').style.display='';
+    initApp();
+    return;
+  }
+  document.getElementById('pwGateBtn').addEventListener('click', ()=>tryUnlock(document.getElementById('pwGateInput').value));
+  document.getElementById('pwGateInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryUnlock(e.target.value); });
+  document.getElementById('pwGateInput').focus();
+}
+setupPasswordGate();
+
+// ===== INIT =====
+async function initApp(){
+  await openDB();
+  await loadAllFromDB();
+
+  APP.theme = await getSetting('theme','light');
+  APP.fontSize = await getSetting('fontSize','md');
+  APP.newLimit = await getSetting('newLimit',20);
+  APP.reviewLimit = await getSetting('reviewLimit',200);
+  APP.showTimer = await getSetting('showTimer',true);
+  APP.autoBackup = await getSetting('autoBackup','daily');
+  currentLang = await getSetting('lang', (navigator.language||'en').slice(0,2));
+  if(!I18N[currentLang]) currentLang='en';
+
+  document.documentElement.setAttribute('data-theme', APP.theme);
+  document.body.className = 'font-'+APP.fontSize;
+
+  // seed a starter deck + a couple of demo cards on very first run only
+  if(CACHE.decks.length===0){
+    const d = await createDeck('Welcome Deck', null);
+    const c1 = newCardShell(d.id,'basic',{front:'What is spaced repetition?', back:'A learning technique that schedules reviews at increasing intervals.'});
+    const c2 = newCardShell(d.id,'chinese',{hanzi:'你好', pinyin:'nǐ hǎo', translation:'hello'});
+    await addCard(c1); await addCard(c2);
+  }
+
+  // auto-backup check
+  const lastBackup = await getSetting('lastAutoBackup', 0);
+  const now = Date.now();
+  const interval = APP.autoBackup==='daily' ? DAY_MS : APP.autoBackup==='weekly' ? 7*DAY_MS : Infinity;
+  if(now - lastBackup > interval){
+    await createBackupSnapshot();
+    await setSetting('lastAutoBackup', now);
+    // prune old backups, keep latest 10
+    const all = (await idbGetAll('backups')).sort((a,b)=>b.timestamp-a.timestamp);
+    for(const old of all.slice(10)) await idbDelete('backups', old.id);
+  }
+
+  navigateTo('dashboard');
+}
+
+
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>
