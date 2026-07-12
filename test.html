@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boshqaruv Paneli</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@200;400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --bg-card: #111827;
+            --fg: #e8ecf4;
+            --muted: #6b7a90;
+            --accent: #00e68a;
+            --accent-dim: rgba(0,230,138,0.12);
+            --accent-glow: rgba(0,230,138,0.3);
+            --danger: #ff4757;
+            --danger-dim: rgba(255,71,87,0.12);
+            --warning: #ffa502;
+            --border: #1e2a3a;
+            --input-bg: #0d1321;
+            --telegram: #0088cc;
+            --telegram-dim: rgba(0,136,204,0.12);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg); color: var(--fg);
+            min-height: 100vh; overflow-x: hidden;
+        }
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(0,230,138,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,230,138,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+        .bg-blob { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+        .bg-blob-1 { width: 500px; height: 500px; top: -150px; right: -100px; background: radial-gradient(circle, rgba(0,230,138,0.08), transparent 70%); animation: blobFloat 12s ease-in-out infinite alternate; }
+        .bg-blob-2 { width: 400px; height: 400px; bottom: -100px; left: -80px; background: radial-gradient(circle, rgba(0,180,216,0.06), transparent 70%); animation: blobFloat 15s ease-in-out infinite alternate-reverse; }
+        @keyframes blobFloat { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(40px,-30px) scale(1.15); } }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            padding: 14px 22px; border-radius: 12px; font-size: 14px; font-weight: 500;
+            display: flex; align-items: center; gap: 10px;
+            transform: translateX(120%); opacity: 0;
+            animation: toastIn 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4); backdrop-filter: blur(12px);
+        }
+        .toast.out { animation: toastOut 0.35s ease-in forwards; }
+        .toast-success { background: rgba(0,230,138,0.15); border: 1px solid rgba(0,230,138,0.3); color: #00e68a; }
+        .toast-error { background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3); color: #ff4757; }
+        .toast-info { background: rgba(0,180,216,0.15); border: 1px solid rgba(0,180,216,0.3); color: #00b4d8; }
+        .toast-tg { background: rgba(0,136,204,0.15); border: 1px solid rgba(0,136,204,0.3); color: #0088cc; }
+        @keyframes toastIn { to { transform: translateX(0); opacity: 1; } }
+        @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+
+        /* Login */
+        #loginPage { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .login-card {
+            background: rgba(17,24,39,0.85); backdrop-filter: blur(24px);
+            border: 1px solid var(--border); border-radius: 20px;
+            padding: 48px 40px; width: 100%; max-width: 440px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+            animation: cardUp 0.7s cubic-bezier(0.22,1,0.36,1);
+        }
+        @keyframes cardUp { from { opacity: 0; transform: translateY(40px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .login-logo { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), #00b4d8); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 28px; color: var(--bg); box-shadow: 0 8px 30px var(--accent-glow); }
+        .login-title { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+        .login-sub { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input-wrap { position: relative; }
+        .form-input-wrap i.icon-left { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; transition: color 0.3s; }
+        .form-input {
+            width: 100%; padding: 14px 16px 14px 46px; background: var(--input-bg);
+            border: 1.5px solid var(--border); border-radius: 12px; color: var(--fg);
+            font-size: 15px; font-family: inherit; transition: all 0.3s; outline: none;
+        }
+        .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+        .form-input:focus ~ i.icon-left { color: var(--accent); }
+        .form-input::placeholder { color: #3a4a5e; }
+        .form-input.no-icon { padding-left: 16px; }
+        textarea.form-input { min-height: 100px; resize: vertical; padding: 14px 16px; }
+        .toggle-pass { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 4px; transition: color 0.3s; }
+        .toggle-pass:hover { color: var(--fg); }
+
+        .btn-login {
+            width: 100%; padding: 15px; background: linear-gradient(135deg, var(--accent), #00b4d8);
+            border: none; border-radius: 12px; color: var(--bg); font-size: 16px; font-weight: 700;
+            font-family: inherit; cursor: pointer; transition: all 0.3s; margin-top: 8px;
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow); }
+        .btn-login:active { transform: translateY(0) scale(0.98); }
+        .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+        .btn-telegram {
+            width: 100%; padding: 15px; background: linear-gradient(135deg, #0088cc, #00a8e8);
+            border: none; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 700;
+            font-family: inherit; cursor: pointer; transition: all 0.3s; margin-top: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-telegram:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,136,204,0.35); }
+        .btn-telegram:active { transform: translateY(0) scale(0.98); }
+        .btn-telegram:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+        .form-error { color: var(--danger); font-size: 12px; margin-top: 6px; display: none; animation: shakeX 0.4s ease; }
+        .form-error.show { display: block; }
+        @keyframes shakeX { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+
+        .tg-divider {
+            display: flex; align-items: center; gap: 14px; margin: 24px 0;
+            color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .tg-divider::before, .tg-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .tg-widget-wrap {
+            background: var(--telegram-dim); border: 1px solid rgba(0,136,204,0.2);
+            border-radius: 14px; padding: 20px; text-align: center;
+        }
+        .tg-widget-wrap .tg-icon { font-size: 36px; color: var(--telegram); margin-bottom: 10px; }
+        .tg-widget-wrap p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        /* Dashboard */
+        #dashboardPage { display: none; position: relative; z-index: 1; min-height: 100vh; }
+        .topbar {
+            position: sticky; top: 0; z-index: 100; background: rgba(10,14,23,0.8);
+            backdrop-filter: blur(20px); border-bottom: 1px solid var(--border);
+            padding: 0 32px; height: 68px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 14px; }
+        .topbar-logo { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #00b4d8); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--bg); font-weight: 800; }
+        .topbar-title { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .role-badge { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .role-badge.admin { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,230,138,0.25); }
+        .role-badge.user { background: rgba(0,180,216,0.12); color: #00b4d8; border: 1px solid rgba(0,180,216,0.25); }
+        .user-name { font-size: 14px; font-weight: 600; color: var(--fg); }
+        .btn-logout { padding: 9px 20px; border-radius: 10px; background: var(--danger-dim); border: 1px solid rgba(255,71,87,0.2); color: var(--danger); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.3s; }
+        .btn-logout:hover { background: rgba(255,71,87,0.25); box-shadow: 0 4px 16px rgba(255,71,87,0.15); }
+
+        .dashboard-body { padding: 32px; max-width: 1280px; margin: 0 auto; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .welcome-section { margin-bottom: 36px; }
+        .welcome-title { font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 6px; }
+        .welcome-title span { color: var(--accent); }
+        .welcome-sub { color: var(--muted); font-size: 15px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 36px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: all 0.35s; position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 16px 16px 0 0; transition: opacity 0.3s; opacity: 0; }
+        .stat-card:hover { border-color: rgba(0,230,138,0.2); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+        .stat-card:hover::before { opacity: 1; }
+        .stat-card:nth-child(1)::before { background: var(--accent); }
+        .stat-card:nth-child(2)::before { background: #00b4d8; }
+        .stat-card:nth-child(3)::before { background: var(--warning); }
+        .stat-card:nth-child(4)::before { background: #a855f7; }
+        .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 16px; }
+        .stat-icon.green { background: var(--accent-dim); color: var(--accent); }
+        .stat-icon.blue { background: rgba(0,180,216,0.12); color: #00b4d8; }
+        .stat-icon.orange { background: rgba(255,165,2,0.12); color: var(--warning); }
+        .stat-icon.purple { background: rgba(168,85,247,0.12); color: #a855f7; }
+        .stat-value { font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+        .stat-label { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+        .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 36px; }
+        @media (max-width: 768px) {
+            .panel-grid { grid-template-columns: 1fr; }
+            .topbar { padding: 0 16px; }
+            .dashboard-body { padding: 20px 16px; }
+            .login-card { padding: 36px 24px; }
+            .topbar-right { gap: 8px; }
+        }
+        .panel-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .panel-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; }
+        .btn-sm { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.3s; border: none; }
+        .btn-accent { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,230,138,0.2); }
+        .btn-accent:hover { background: rgba(0,230,138,0.2); }
+        .btn-tg { background: var(--telegram-dim); color: var(--telegram); border: 1px solid rgba(0,136,204,0.2); }
+        .btn-tg:hover { background: rgba(0,136,204,0.2); }
+
+        .user-table { width: 100%; border-collapse: collapse; }
+        .user-table th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+        .user-table td { padding: 12px 14px; font-size: 14px; border-bottom: 1px solid rgba(30,42,58,0.5); }
+        .user-table tr:hover td { background: rgba(0,230,138,0.02); }
+        .status { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .status-active { background: var(--accent-dim); color: var(--accent); }
+        .status-inactive { background: var(--danger-dim); color: var(--danger); }
+        .action-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; transition: all 0.25s; display: inline-flex; align-items: center; justify-content: center; }
+        .action-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .action-btn.del:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-dim); }
+
+        .modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; width: 100%; max-width: 460px; animation: cardUp 0.4s cubic-bezier(0.22,1,0.36,1); }
+        .modal-title { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+        .modal .form-input { padding-left: 16px; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .modal-actions button { flex: 1; }
+        .btn-cancel { padding: 13px; border-radius: 12px; background: transparent; border: 1.5px solid var(--border); color: var(--muted); font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.3s; }
+        .btn-cancel:hover { border-color: var(--muted); color: var(--fg); }
+
+        .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid rgba(30,42,58,0.5); }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-info { flex: 1; }
+        .setting-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+        .setting-desc { font-size: 12px; color: var(--muted); }
+        .toggle { width: 48px; height: 26px; border-radius: 13px; background: #2a3444; cursor: pointer; position: relative; transition: background 0.3s; border: none; flex-shrink: 0; }
+        .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: white; top: 3px; left: 3px; transition: transform 0.3s; }
+        .toggle.active { background: var(--accent); }
+        .toggle.active::after { transform: translateX(22px); }
+
+        .log-list { max-height: 340px; overflow-y: auto; }
+        .log-list::-webkit-scrollbar { width: 4px; }
+        .log-list::-webkit-scrollbar-track { background: transparent; }
+        .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .log-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(30,42,58,0.3); }
+        .log-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+        .log-dot.green { background: var(--accent); }
+        .log-dot.red { background: var(--danger); }
+        .log-dot.blue { background: #00b4d8; }
+        .log-dot.tg { background: var(--telegram); }
+        .log-text { font-size: 13px; line-height: 1.5; }
+        .log-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+        .admin-only { display: none; }
+        .admin-only.visible { display: block; }
+        .password-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 24px; }
+        .reveal { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.22,1,0.36,1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--accent-glow); } 50% { box-shadow: 0 0 0 8px transparent; } }
+
+        /* Fayl yuklash zona */
+        .file-drop {
+            border: 2px dashed var(--border); border-radius: 14px; padding: 32px;
+            text-align: center; cursor: pointer; transition: all 0.3s;
+            margin-bottom: 16px; position: relative;
+        }
+        .file-drop:hover, .file-drop.dragover {
+            border-color: var(--telegram); background: var(--telegram-dim);
+        }
+        .file-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .file-drop i { font-size: 32px; color: var(--muted); margin-bottom: 10px; display: block; }
+        .file-drop p { font-size: 13px; color: var(--muted); }
+        .file-drop .file-name { color: var(--telegram); font-weight: 600; margin-top: 8px; display: none; }
+
+        .send-status {
+            padding: 12px 16px; border-radius: 10px; font-size: 13px;
+            display: none; align-items: center; gap: 8px; margin-top: 12px;
+        }
+        .send-status.ok { display: flex; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,230,138,0.2); }
+        .send-status.err { display: flex; background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,71,87,0.2); }
+        .send-status.loading { display: flex; background: var(--telegram-dim); color: var(--telegram); border: 1px solid rgba(0,136,204,0.2); }
+
+        .full-width { grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-blob bg-blob-1"></div>
+<div class="bg-blob bg-blob-2"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ====== LOGIN ====== -->
+<div id="loginPage">
+    <div class="login-card">
+        <div class="login-logo"><i class="fas fa-shield-halved"></i></div>
+        <h1 class="login-title">Boshqaruv Paneli</h1>
+        <p class="login-sub">Tizimga kirish uchun ma'lumotlaringizni kiriting</p>
+
+        <form id="loginForm" autocomplete="off">
+            <div class="form-group">
+                <label class="form-label">Foydalanuvchi nomi</label>
+                <div class="form-input-wrap">
+                    <input type="text" class="form-input" id="loginUser" placeholder="Username kiriting..." autofocus>
+                    <i class="fas fa-user icon-left"></i>
+                </div>
+                <div class="form-error" id="userError"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Parol</label>
+                <div class="form-input-wrap">
+                    <input type="password" class="form-input" id="loginPass" placeholder="Parolni kiriting...">
+                    <i class="fas fa-lock icon-left"></i>
+                    <button type="button" class="toggle-pass" id="togglePass" aria-label="Parolni ko'rsatish"><i class="fas fa-eye"></i></button>
+                </div>
+                <div class="form-error" id="passError"></div>
+            </div>
+            <button type="submit" class="btn-login" id="btnLogin">
+                <i class="fas fa-right-to-bracket"></i>&nbsp; Tizimga kirish
+            </button>
+        </form>
+
+        <div class="tg-divider">yoki</div>
+
+        <div class="tg-widget-wrap">
+            <div class="tg-icon"><i class="fab fa-telegram"></i></div>
+            <p style="font-weight:600;color:var(--fg);margin-bottom:4px;">Telegram orqali kirish</p>
+            <p>Bot orqali login va parol oling</p>
+        </div>
+        <button class="btn-telegram" id="btnTgLogin" style="margin-top:14px;">
+            <i class="fab fa-telegram"></i> Telegram bilan kirish
+        </button>
+    </div>
+</div>
+
+<!-- ====== DASHBOARD ====== -->
+<div id="dashboardPage">
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="topbar-logo"><i class="fas fa-shield-halved"></i></div>
+            <span class="topbar-title">Panel</span>
+        </div>
+        <div class="topbar-right">
+            <span class="user-name" id="displayUser"></span>
+            <span class="role-badge" id="displayRole"></span>
+            <button class="btn-logout" id="btnLogout"><i class="fas fa-arrow-right-from-bracket"></i>&nbsp; Chiqish</button>
+        </div>
+    </header>
+
+    <main class="dashboard-body">
+        <section class="welcome-section reveal">
+            <h2 class="welcome-title">Xush kelibsiz, <span id="welcomeName"></span></h2>
+            <p class="welcome-sub"><span class="pulse-dot"></span>&nbsp; <span id="welcomeSub"></span></p>
+        </section>
+
+        <section class="stats-grid reveal">
+            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-users"></i></div><div class="stat-value" id="statUsers">0</div><div class="stat-label">Foydalanuvchilar</div></div>
+            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-chart-line"></i></div><div class="stat-value" id="statSessions">0</div><div class="stat-label">Sessiyalar</div></div>
+            <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-bolt"></i></div><div class="stat-value" id="statActions">0</div><div class="stat-label">Amallar</div></div>
+            <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-clock"></i></div><div class="stat-value" id="statUptime">0%</div><div class="stat-label">Ishlash vaqti</div></div>
+        </section>
+
+        <!-- Telegram xabar yuborish -->
+        <section class="panel-grid">
+            <div class="panel-card reveal">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fab fa-telegram" style="color:var(--telegram);margin-right:8px"></i>Xabar yuborish</h3>
+                </div>
+                <form id="tgMsgForm" autocomplete="off">
+                    <div class="form-group">
+                        <label class="form-label">Xabar matni</label>
+                        <textarea class="form-input no-icon" id="tgMessage" placeholder="Xabaringizni yozing..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Qabul qiluvchi</label>
+                        <select class="form-input no-icon" id="tgRecipient" style="cursor:pointer;">
+                            <option value="self">O'zimga (user)</option>
+                            <option value="admin">Adminga</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-telegram" id="btnSendMsg" style="margin-top:0;">
+                        <i class="fas fa-paper-plane"></i> Xabar yuborish
+                    </button>
+                    <div class="send-status" id="msgStatus"></div>
+                </form>
+            </div>
+
+            <div class="panel-card reveal">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fas fa-file-arrow-up" style="color:var(--warning);margin-right:8px"></i>Fayl yuborish</h3>
+                </div>
+                <div class="file-drop" id="fileDrop">
+                    <input type="file" id="fileInput" multiple>
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <p>Faylni bu yerga tashlang yoki tanlang</p>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Qabul qiluvchi</label>
+                    <select class="form-input no-icon" id="tgFileRecipient" style="cursor:pointer;">
+                        <option value="self">O'zimga (user)</option>
+                        <option value="admin">Adminga</option>
+                    </select>
+                </div>
+                <button class="btn-telegram" id="btnSendFile" style="margin-top:0;">
+                    <i class="fas fa-paper-plane"></i> Fayl yuborish
+                </button>
+                <div class="send-status" id="fileStatus"></div>
+            </div>
+
+            <!-- JSON eksport -->
+            <div class="panel-card reveal">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fas fa-code" style="color:#a855f7;margin-right:8px"></i>JSON ma'lumotlar</h3>
+                </div>
+                <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Barcha tizim ma'lumotlarini JSON formatida yuborish yoki yuklab olish</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn-sm btn-tg" id="btnSendJson" style="padding:10px 18px;font-size:13px;">
+                        <i class="fab fa-telegram"></i>&nbsp; Telegramga yuborish
+                    </button>
+                    <button class="btn-sm btn-accent" id="btnDownloadJson" style="padding:10px 18px;font-size:13px;">
+                        <i class="fas fa-download"></i>&nbsp; Yuklab olish
+                    </button>
+                </div>
+                <div class="send-status" id="jsonStatus"></div>
+            </div>
+
+            <!-- Foydalanuvchilar (admin) -->
+            <div class="panel-card reveal admin-only" id="usersPanel">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fas fa-user-group" style="color:var(--accent);margin-right:8px"></i>Foydalanuvchilar</h3>
+                    <button class="btn-sm btn-accent" id="btnAddUser"><i class="fas fa-plus"></i>&nbsp; Qo'shish</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="user-table">
+                        <thead><tr><th>Ism</th><th>Rol</th><th>Holat</th><th>Amal</th></tr></thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Log -->
+            <div class="panel-card reveal full-width">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="fas fa-list-timeline" style="color:#00b4d8;margin-right:8px"></i>Faoliyat logi</h3>
+                </div>
+                <div class="log-list" id="logList"></div>
+            </div>
+        </section>
+
+        <!-- Sozlamalar -->
+        <section class="panel-card reveal" style="margin-bottom:24px;">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fas fa-gear" style="color:var(--warning);margin-right:8px"></i>Sozlamalar</h3>
+            </div>
+            <div class="setting-row"><div class="setting-info"><div class="setting-name">Bildirishnomalar</div><div class="setting-desc">Yangi hodisalar haqida xabar olish</div></div><button class="toggle active" data-setting="notifications" aria-label="Bildirishnomalar"></button></div>
+            <div class="setting-row"><div class="setting-info"><div class="setting-name">Qorong'u rejim</div><div class="setting-desc">Hozirda faol</div></div><button class="toggle active" data-setting="darkmode" aria-label="Qorong'u rejim"></button></div>
+            <div class="setting-row"><div class="setting-info"><div class="setting-name">Avto saqlash</div><div class="setting-desc">O'zgarishlarni avtomatik saqlash</div></div><button class="toggle" data-setting="autosave" aria-label="Avto saqlash"></button></div>
+            <div class="setting-row"><div class="setting-info"><div class="setting-name">Telegram bildirishnomalari</div><div class="setting-desc">Kirish va parol o'zgarishida adminga xabar</div></div><button class="toggle active" data-setting="tg_notify" aria-label="TG notify"></button></div>
+        </section>
+
+        <!-- Parol o'zgartirish -->
+        <section class="password-section reveal">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fas fa-key" style="color:#a855f7;margin-right:8px"></i>Parolni o'zgartirish</h3>
+            </div>
+            <form id="changePassForm" autocomplete="off">
+                <div class="form-group">
+                    <label class="form-label">Joriy parol</label>
+                    <div class="form-input-wrap"><input type="password" class="form-input" id="currentPass" placeholder="Joriy parolingiz..."><i class="fas fa-lock icon-left"></i></div>
+                    <div class="form-error" id="currentPassError">Joriy parol noto'g'ri</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Yangi parol</label>
+                    <div class="form-input-wrap"><input type="password" class="form-input" id="newPass" placeholder="Yangi parol..."><i class="fas fa-lock icon-left"></i></div>
+                    <div class="form-error" id="newPassError">Parol kamida 4 belgidan iborat bo'lishi kerak</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Yangi parol (takroriy)</label>
+                    <div class="form-input-wrap"><input type="password" class="form-input" id="confirmPass" placeholder="Yangi parolni qayta kiriting..."><i class="fas fa-lock icon-left"></i></div>
+                    <div class="form-error" id="confirmPassError">Parollar mos kelmadi</div>
+                </div>
+                <button type="submit" class="btn-login" style="max-width:260px;"><i class="fas fa-check"></i>&nbsp; Saqlash</button>
+            </form>
+        </section>
+    </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="addUserModal">
+    <div class="modal">
+        <h3 class="modal-title"><i class="fas fa-user-plus" style="color:var(--accent);margin-right:8px"></i>Foydalanuvchi qo'shish</h3>
+        <form id="addUserForm" autocomplete="off">
+            <div class="form-group"><label class="form-label">Ism</label><input type="text" class="form-input" id="newUserName" placeholder="Ism kiriting..."></div>
+            <div class="form-group"><label class="form-label">Rol</label><select class="form-input" id="newUserRole" style="padding-left:16px;cursor:pointer;"><option value="user">Foydalanuvchi</option><option value="admin">Admin</option></select></div>
+            <div class="modal-actions"><button type="button" class="btn-cancel" id="cancelAddUser">Bekor qilish</button><button type="submit" class="btn-login" style="padding:13px;">Qo'shish</button></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ===== TELEGRAM BOT SOZLAMALARI =====
+    const BOT_TOKEN = '8790775560:AAEAWvFLWQBID5ZGJtzHFLE6_hjxJpE-BZU';
+    const ADMIN_CHAT_ID = '660086073';
+    const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+
+    // User chat ID larni saqlash (bot orqali /start bosganda saqlanadi)
+    let userChatIds = loadData('panel_user_chat_ids', {});
+
+    // ===== MA'LUMOTLAR =====
+    const DEFAULT_ACCOUNTS = [
+        { username: 'admin', password: 'admin123', role: 'admin', displayName: 'Administrator' },
+        { username: 'user',  password: 'user123',  role: 'user',  displayName: 'Foydalanuvchi' }
+    ];
+    const DEFAULT_USERS_LIST = [
+        { id: 1, name: 'Ali Karimov',     role: 'admin', status: 'active' },
+        { id: 2, name: 'Sardor Toshmatov', role: 'user',  status: 'active' },
+        { id: 3, name: 'Dilnoza Rahimova', role: 'user',  status: 'active' },
+        { id: 4, name: 'Jasur Xolmatov',  role: 'user',  status: 'inactive' },
+        { id: 5, name: 'Nodira Azimova',  role: 'user',  status: 'active' },
+    ];
+    function getTimeStr(m) { return new Date(Date.now() + m * 60000).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }); }
+    function getFullTime() { return new Date().toLocaleString('uz-UZ', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+    function loadData(k, d) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : d; } catch(e) { return d; } }
+    function saveData(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+    let accounts = loadData('panel_accounts', DEFAULT_ACCOUNTS);
+    let usersList = loadData('panel_users', DEFAULT_USERS_LIST);
+    let logs = loadData('panel_logs', [
+        { text: 'Tizim ishga tushirildi', type: 'green', time: getTimeStr(-120) },
+        { text: 'Backup yaratildi', type: 'blue', time: getTimeStr(-90) },
+        { text: 'Xavfsizlik yangilandi', type: 'green', time: getTimeStr(-60) },
+    ]);
+    let sessionCount = loadData('panel_sessions', 147);
+    let actionCount = loadData('panel_actions', 1243);
+    let currentUser = null;
+    let selectedFile = null;
+
+    // ===== TOAST =====
+    function showToast(msg, type = 'success') {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle', tg: 'fa-paper-plane' };
+        t.className = `toast toast-${type}`;
+        t.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${msg}</span>`;
+        c.appendChild(t);
+        setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 3500);
+    }
+
+    // ===== LOG =====
+    function addLog(text, type = 'green') {
+        const time = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+        logs.unshift({ text, type, time });
+        if (logs.length > 50) logs.pop();
+        saveData('panel_logs', logs);
+        renderLogs();
+        actionCount++;
+        saveData('panel_actions', actionCount);
+    }
+
+    // ===== TELEGRAM API FUNKSIYALARI =====
+
+    // Xabar yuborish
+    async function tgSendMessage(chatId, text, parseMode = 'HTML') {
+        try {
+            const resp = await fetch(`${TG_API}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text, parse_mode: parseMode })
+            });
+            const data = await resp.json();
+            if (data.ok) return { ok: true };
+            return { ok: false, error: data.description };
+        } catch (e) {
+            return { ok: false, error: e.message };
+        }
+    }
+
+    // Fayl yuborish
+    async function tgSendDocument(chatId, file, caption = '') {
+        try {
+            const formData = new FormData();
+            formData.append('chat_id', chatId);
+            formData.append('document', file);
+            if (caption) formData.append('caption', caption);
+            const resp = await fetch(`${TG_API}/sendDocument`, { method: 'POST', body: formData });
+            const data = await resp.json();
+            if (data.ok) return { ok: true };
+            return { ok: false, error: data.description };
+        } catch (e) {
+            return { ok: false, error: e.message };
+        }
+    }
+
+    // JSON fayl yuborish
+    async function tgSendJson(chatId, jsonData, filename = 'data.json') {
+        try {
+            const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+            const file = new File([blob], filename, { type: 'application/json' });
+            return await tgSendDocument(chatId, file, `Tizim ma'lumotlari - ${getFullTime()}`);
+        } catch (e) {
+            return { ok: false, error: e.message };
+        }
+    }
+
+    // Adminga xabar yuborish (kirish/parol o'zgarish)
+    async function notifyAdmin(eventType, extra = {}) {
+        const settings = loadData('panel_settings', { tg_notify: true });
+        if (!settings.tg_notify) return;
+
+        let message = '';
+        if (eventType === 'login') {
+            message = `<b>🔐 Yangi kirish</b>\n\n` +
+                `<b>Foydalanuvchi:</b> ${extra.displayName}\n` +
+                `<b>Username:</b> ${extra.username}\n` +
+                `<b>Rol:</b> ${extra.role === 'admin' ? 'Admin' : 'Foydalanuvchi'}\n` +
+                `<b>Vaqt:</b> ${extra.time}\n` +
+                `<b>Brauzer:</b> ${navigator.userAgent.split(' ').slice(-2).join(' ')}\n` +
+                `<b>Platforma:</b> ${navigator.platform}\n` +
+                `<b>Til:</b> ${navigator.language}`;
+        } else if (eventType === 'password_change') {
+            message = `<b>🔑 Parol o'zgartirildi</b>\n\n` +
+                `<b>Foydalanuvchi:</b> ${extra.displayName}\n` +
+                `<b>Username:</b> ${extra.username}\n` +
+                `<b>Rol:</b> ${extra.role === 'admin' ? 'Admin' : 'Foydalanuvchi'}\n` +
+                `<b>Vaqt:</b> ${extra.time}\n` +
+                `<b>Brauzer:</b> ${navigator.userAgent.split(' ').slice(-2).join(' ')}`;
+        }
+
+        const result = await tgSendMessage(ADMIN_CHAT_ID, message);
+        if (result.ok) {
+            addLog(`Admin ga Telegram xabari yuborildi (${eventType})`, 'tg');
+        } else {
+            addLog(`Telegram xatolik: ${result.error}`, 'red');
+        }
+        return result;
+    }
+
+    // User ga JSON yuborish
+    async function sendJsonToUser() {
+        if (!currentUser) return;
+        const chatId = userChatIds[currentUser.username];
+        if (!chatId) {
+            showToast('Avval bot orqali /start bosib chat ID ingizni ulang', 'error');
+            return;
+        }
+        const data = buildSystemData();
+        return await tgSendJson(chatId, data, `panel_data_${currentUser.username}.json`);
+    }
+
+    // Tizim ma'lumotlarini yig'ish
+    function buildSystemData() {
+        return {
+            generated_at: getFullTime(),
+            current_user: { username: currentUser.username, displayName: currentUser.displayName, role: currentUser.role },
+            users_list: usersList,
+            accounts: accounts.map(a => ({ username: a.username, role: a.role, displayName: a.displayName })),
+            statistics: { total_users: usersList.length, sessions: sessionCount, actions: actionCount },
+            logs: logs.slice(0, 20)
+        };
+    }
+
+    // ===== LOGIN =====
+    const loginForm = document.getElementById('loginForm');
+    const loginUser = document.getElementById('loginUser');
+    const loginPass = document.getElementById('loginPass');
+    const userError = document.getElementById('userError');
+    const passError = document.getElementById('passError');
+    const btnLogin = document.getElementById('btnLogin');
+
+    document.getElementById('togglePass').addEventListener('click', function() {
+        const i = this.querySelector('i');
+        if (loginPass.type === 'password') { loginPass.type = 'text'; i.className = 'fas fa-eye-slash'; }
+        else { loginPass.type = 'password'; i.className = 'fas fa-eye'; }
+    });
+    loginUser.addEventListener('input', () => userError.classList.remove('show'));
+    loginPass.addEventListener('input', () => passError.classList.remove('show'));
+
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        let valid = true;
+        const username = loginUser.value.trim();
+        const password = loginPass.value;
+        if (!username) { userError.textContent = "Foydalanuvchi nomini kiriting"; userError.classList.add('show'); valid = false; }
+        if (!password) { passError.textContent = "Parolni kiriting"; passError.classList.add('show'); valid = false; }
+        if (!valid) return;
+
+        btnLogin.disabled = true;
+        btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Tekshirilmoqda...';
+
+        setTimeout(() => {
+            const account = accounts.find(a => a.username === username && a.password === password);
+            if (!account) {
+                const ue = accounts.find(a => a.username === username);
+                if (!ue) { userError.textContent = `"${username}" foydalanuvchisi topilmadi`; userError.classList.add('show'); }
+                else { passError.textContent = "Parol noto'g'ri"; passError.classList.add('show'); }
+                btnLogin.disabled = false;
+                btnLogin.innerHTML = '<i class="fas fa-right-to-bracket"></i>&nbsp; Tizimga kirish';
+                addLog(`Noto'g'ri kirish urinishi: ${username}`, 'red');
+                showToast("Login yoki parol noto'g'ri", 'error');
+                return;
+            }
+
+            currentUser = account;
+            sessionCount++;
+            saveData('panel_sessions', sessionCount);
+            addLog(`${account.displayName} tizimga kirdi (${account.role})`, 'green');
+            showToast(`Xush kelibsiz, ${account.displayName}!`, 'success');
+
+            // Adminga Telegram xabari
+            notifyAdmin('login', {
+                displayName: account.displayName,
+                username: account.username,
+                role: account.role,
+                time: getFullTime()
+            });
+
+            showDashboard();
+            loginForm.reset();
+            btnLogin.disabled = false;
+            btnLogin.innerHTML = '<i class="fas fa-right-to-bracket"></i>&nbsp; Tizimga kirish';
+        }, 800);
+    });
+
+    // Telegram login tugmasi (bot orqali /start buyrug'ini eslatish)
+    document.getElementById('btnTgLogin').addEventListener('click', async function() {
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
+
+        // Bot nomini olish
+        try {
+            const resp = await fetch(`${TG_API}/getMe`);
+            const data = await resp.json();
+            if (data.ok) {
+                const bot = data.result;
+                window.open(`https://t.me/${bot.username}`, '_blank');
+                showToast('Botni oching va /start bosib chat ID ingizni oling', 'tg');
+            } else {
+                showToast("Bot bilan bog'lanishda xatolik", 'error');
+            }
+        } catch(e) {
+            showToast("Internet bilan muammo", 'error');
+        }
+
+        this.disabled = false;
+        this.innerHTML = '<i class="fab fa-telegram"></i> Telegram bilan kirish';
+    });
+
+    // ===== DASHBOARD =====
+    function showDashboard() {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('dashboardPage').style.display = 'block';
+        document.getElementById('displayUser').textContent = currentUser.displayName;
+        document.getElementById('welcomeName').textContent = currentUser.displayName;
+
+        const rb = document.getElementById('displayRole');
+        if (currentUser.role === 'admin') {
+            rb.textContent = 'Admin'; rb.className = 'role-badge admin';
+            document.getElementById('welcomeSub').textContent = "To'liq boshqaruv huquqlari faol";
+        } else {
+            rb.textContent = 'Foydalanuvchi'; rb.className = 'role-badge user';
+            document.getElementById('welcomeSub').textContent = "Cheklangan huquqlar bilan ishlaysiz";
+        }
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('visible', currentUser.role === 'admin'));
+        updateStats(); renderUsersTable(); renderLogs(); triggerReveal();
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', function() {
+        addLog(`${currentUser.displayName} tizimdan chiqdi`, 'blue');
+        showToast("Tizimdan chiqdingiz", 'info');
+        currentUser = null;
+        sessionStorage.removeItem('panel_session');
+        document.getElementById('dashboardPage').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'flex';
+        loginUser.focus();
+    });
+
+    // ===== STATISTIKA =====
+    function updateStats() {
+        animateNumber('statUsers', usersList.length);
+        animateNumber('statSessions', sessionCount);
+        animateNumber('statActions', actionCount);
+        document.getElementById('statUptime').textContent = '99.8%';
+    }
+    function animateNumber(id, target) {
+        const el = document.getElementById(id);
+        const start = performance.now();
+        (function step(now) {
+            const p = Math.min((now - start) / 1200, 1);
+            el.textContent = Math.round(target * (p === 1 ? 1 : 1 - Math.pow(2, -10 * p)));
+            if (p < 1) requestAnimationFrame(step);
+        })(start);
+    }
+
+    // ===== FOYDALANUVCHILAR JADVALI =====
+    function renderUsersTable() {
+        const tb = document.getElementById('usersTableBody');
+        tb.innerHTML = '';
+        usersList.forEach(u => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td style="font-weight:600">${u.name}</td>
+                <td><span class="role-badge ${u.role==='admin'?'admin':'user'}" style="font-size:10px;padding:3px 10px;">${u.role==='admin'?'Admin':'User'}</span></td>
+                <td><span class="status ${u.status==='active'?'status-active':'status-inactive'}">${u.status==='active'?'Faol':'Nofaol'}</span></td>
+                <td>
+                    <button class="action-btn" title="Holat" onclick="toggleUserStatus(${u.id})"><i class="fas fa-arrows-rotate"></i></button>
+                    <button class="action-btn del" title="O'chirish" onclick="deleteUser(${u.id})" style="margin-left:6px;"><i class="fas fa-trash-can"></i></button>
+                </td>`;
+            tb.appendChild(tr);
+        });
+    }
+    function toggleUserStatus(id) {
+        const u = usersList.find(x => x.id === id); if (!u) return;
+        u.status = u.status === 'active' ? 'inactive' : 'active';
+        saveData('panel_users', usersList); renderUsersTable();
+        addLog(`${u.name} holati: ${u.status==='active'?'Faol':'Nofaol'}`, u.status==='active'?'green':'red');
+        showToast(`${u.name} holati o'zgartirildi`, 'info');
+    }
+    function deleteUser(id) {
+        const u = usersList.find(x => x.id === id); if (!u) return;
+        usersList = usersList.filter(x => x.id !== id);
+        saveData('panel_users', usersList); renderUsersTable(); updateStats();
+        addLog(`${u.name} o'chirildi`, 'red'); showToast(`${u.name} o'chirildi`, 'error');
+    }
+
+    // ===== MODAL =====
+    const addUserModal = document.getElementById('addUserModal');
+    document.getElementById('btnAddUser').addEventListener('click', () => { addUserModal.classList.add('show'); document.getElementById('newUserName').focus(); });
+    document.getElementById('cancelAddUser').addEventListener('click', () => { addUserModal.classList.remove('show'); document.getElementById('addUserForm').reset(); });
+    addUserModal.addEventListener('click', e => { if (e.target === addUserModal) { addUserModal.classList.remove('show'); document.getElementById('addUserForm').reset(); } });
+    document.getElementById('addUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('newUserName').value.trim();
+        const role = document.getElementById('newUserRole').value;
+        if (!name) { showToast("Ismni kiriting", 'error'); return; }
+        usersList.push({ id: usersList.length > 0 ? Math.max(...usersList.map(u => u.id)) + 1 : 1, name, role, status: 'active' });
+        saveData('panel_users', usersList); renderUsersTable(); updateStats();
+        addLog(`Yangi foydalanuvchi: ${name} (${role})`, 'green'); showToast(`${name} qo'shildi`, 'success');
+        addUserModal.classList.remove('show'); this.reset();
+    });
+
+    // ===== LOGLAR =====
+    function renderLogs() {
+        const list = document.getElementById('logList');
+        list.innerHTML = '';
+        logs.forEach(l => {
+            const d = document.createElement('div');
+            d.className = 'log-item';
+            d.innerHTML = `<div class="log-dot ${l.type}"></div><div><div class="log-text">${l.text}</div><div class="log-time">${l.time}</div></div>`;
+            list.appendChild(d);
+        });
+    }
+
+    // ===== SOZLAMALAR =====
+    let settings = loadData('panel_settings', { tg_notify: true });
+    document.querySelectorAll('.toggle').forEach(t => {
+        // Boshlang'ich holat
+        const s = t.dataset.setting;
+        if (settings[s] !== undefined) {
+            t.classList.toggle('active', settings[s]);
+        }
+        t.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const key = this.dataset.setting;
+            const on = this.classList.contains('active');
+            settings[key] = on;
+            saveData('panel_settings', settings);
+            addLog(`Sozlama: ${key} -> ${on ? 'yoqilgan' : 'o\\'chirilgan'}`, on ? 'green' : 'red');
+            showToast(`${key} ${on ? 'yoqildi' : 'o\\'chirildi'}`, 'info');
+        });
+    });
+
+    // ===== TELEGRAM XABAR YUBORISH =====
+    document.getElementById('tgMsgForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const msg = document.getElementById('tgMessage').value.trim();
+        const recipient = document.getElementById('tgRecipient').value;
+        const status = document.getElementById('msgStatus');
+
+        if (!msg) { showToast("Xabar matnini kiriting", 'error'); return; }
+
+        const btn = document.getElementById('btnSendMsg');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuborilmoqda...';
+        status.className = 'send-status loading';
+        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuborilmoqda...';
+
+        let chatId;
+        if (recipient === 'admin') {
+            chatId = ADMIN_CHAT_ID;
+        } else {
+            chatId = userChatIds[currentUser.username];
+            if (!chatId) {
+                status.className = 'send-status err';
+                status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Chat ID topilmadi. Avval bot orqali /start bosing.';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Xabar yuborish';
+                return;
+            }
+        }
+
+        const prefix = recipient === 'admin' ? `[${currentUser.displayName} dan]:\n\n` : '';
+        const result = await tgSendMessage(chatId, prefix + msg);
+
+        if (result.ok) {
+            status.className = 'send-status ok';
+            status.innerHTML = '<i class="fas fa-check-circle"></i> Xabar muvaffaqiyatli yuborildi!';
+            addLog(`Telegram xabar yuborildi -> ${recipient}`, 'tg');
+            showToast("Xabar yuborildi!", 'tg');
+            document.getElementById('tgMessage').value = '';
+        } else {
+            status.className = 'send-status err';
+            status.innerHTML = `<i class="fas fa-times-circle"></i> Xatolik: ${result.error}`;
+            showToast(`Xatolik: ${result.error}`, 'error');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Xabar yuborish';
+    });
+
+    // ===== FAYL YUBORISH =====
+    const fileDrop = document.getElementById('fileDrop');
+    const fileInput = document.getElementById('fileInput');
+    const fileNameEl = document.getElementById('fileName');
+
+    fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('dragover'); });
+    fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+    fileDrop.addEventListener('drop', e => {
+        e.preventDefault(); fileDrop.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            selectedFile = e.dataTransfer.files[0];
+            fileNameEl.textContent = selectedFile.name;
+            fileNameEl.style.display = 'block';
+        }
+    });
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            selectedFile = fileInput.files[0];
+            fileNameEl.textContent = selectedFile.name;
+            fileNameEl.style.display = 'block';
+        }
+    });
+
+    document.getElementById('btnSendFile').addEventListener('click', async function() {
+        if (!selectedFile) { showToast("Fayl tanlang", 'error'); return; }
+
+        const recipient = document.getElementById('tgFileRecipient').value;
+        const status = document.getElementById('fileStatus');
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuborilmoqda...';
+        status.className = 'send-status loading';
+        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fayl yuborilmoqda...';
+
+        let chatId;
+        if (recipient === 'admin') {
+            chatId = ADMIN_CHAT_ID;
+        } else {
+            chatId = userChatIds[currentUser.username];
+            if (!chatId) {
+                status.className = 'send-status err';
+                status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Chat ID topilmadi. Avval bot orqali /start bosing.';
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-paper-plane"></i> Fayl yuborish';
+                return;
+            }
+        }
+
+        const caption = `[${currentUser.displayName}] fayl yubordi: ${selectedFile.name}`;
+        const result = await tgSendDocument(chatId, selectedFile, caption);
+
+        if (result.ok) {
+            status.className = 'send-status ok';
+            status.innerHTML = `<i class="fas fa-check-circle"></i> "${selectedFile.name}" muvaffaqiyatli yuborildi!`;
+            addLog(`Telegram fayl yuborildi: ${selectedFile.name} -> ${recipient}`, 'tg');
+            showToast("Fayl yuborildi!", 'tg');
+            selectedFile = null; fileNameEl.style.display = 'none'; fileInput.value = '';
+        } else {
+            status.className = 'send-status err';
+            status.innerHTML = `<i class="fas fa-times-circle"></i> Xatolik: ${result.error}`;
+            showToast(`Xatolik: ${result.error}`, 'error');
+        }
+
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-paper-plane"></i> Fayl yuborish';
+    });
+
+    // ===== JSON YUBORISH / YUKLAB OLISH =====
+    document.getElementById('btnSendJson').addEventListener('click', async function() {
+        const status = document.getElementById('jsonStatus');
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuborilmoqda...';
+        status.className = 'send-status loading';
+        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> JSON tayyorlanmoqda...';
+
+        const chatId = userChatIds[currentUser.username];
+        if (!chatId) {
+            status.className = 'send-status err';
+            status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Chat ID topilmadi. Avval bot orqali /start bosing.';
+            this.disabled = false;
+            this.innerHTML = '<i class="fab fa-telegram"></i>&nbsp; Telegramga yuborish';
+            return;
+        }
+
+        const data = buildSystemData();
+        const result = await tgSendJson(chatId, data, `panel_${currentUser.username}_${Date.now()}.json`);
+
+        if (result.ok) {
+            status.className = 'send-status ok';
+            status.innerHTML = '<i class="fas fa-check-circle"></i> JSON fayl Telegramga yuborildi!';
+            addLog('JSON ma\'lumotlar Telegramga yuborildi', 'tg');
+            showToast('JSON yuborildi!', 'tg');
+        } else {
+            status.className = 'send-status err';
+            status.innerHTML = `<i class="fas fa-times-circle"></i> Xatolik: ${result.error}`;
+            showToast(`Xatolik: ${result.error}`, 'error');
+        }
+
+        this.disabled = false;
+        this.innerHTML = '<i class="fab fa-telegram"></i>&nbsp; Telegramga yuborish';
+    });
+
+    document.getElementById('btnDownloadJson').addEventListener('click', function() {
+        const data = buildSystemData();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `panel_${currentUser.username}_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addLog('JSON fayl yuklab olindi', 'blue');
+        showToast('JSON yuklab olindi!', 'success');
+    });
+
+    // ===== PAROL O'ZGARTIRISH =====
+    document.getElementById('changePassForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let ok = true;
+        const cp = document.getElementById('currentPass').value;
+        const np = document.getElementById('newPass').value;
+        const cfp = document.getElementById('confirmPass').value;
+        this.querySelectorAll('.form-error').forEach(el => el.classList.remove('show'));
+        if (cp !== currentUser.password) { document.getElementById('currentPassError').classList.add('show'); ok = false; }
+        if (np.length < 4) { document.getElementById('newPassError').classList.add('show'); ok = false; }
+        if (np !== cfp) { document.getElementById('confirmPassError').classList.add('show'); ok = false; }
+        if (!ok) return;
+
+        const idx = accounts.findIndex(a => a.username === currentUser.username);
+        if (idx !== -1) {
+            accounts[idx].password = np;
+            saveData('panel_accounts', accounts);
+            currentUser.password = np;
+            addLog(`${currentUser.displayName} parolini o'zgartirdi`, 'blue');
+            showToast("Parol o'zgartirildi", 'success');
+
+            // Adminga Telegram xabari
+            notifyAdmin('password_change', {
+                displayName: currentUser.displayName,
+                username: currentUser.username,
+                role: currentUser.role,
+                time: getFullTime()
+            });
+
+            this.reset();
+        }
+    });
+    ['currentPass', 'newPass', 'confirmPass'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => document.getElementById(id + 'Error').classList.remove('show'));
+    });
+
+    // ===== REVEAL =====
+    function triggerReveal() {
+        document.querySelectorAll('.reveal').forEach((el, i) => {
+            el.classList.remove('visible');
+            setTimeout(() => el.classList.add('visible'), 100 + i * 100);
+        });
+    }
+
+    // ===== SAHIFA YUKLANGANDA =====
+    window.addEventListener('DOMContentLoaded', () => {
+        const saved = sessionStorage.getItem('panel_session');
+        if (saved) {
+            try {
+                const s = JSON.parse(saved);
+                const acc = accounts.find(a => a.username === s.username);
+                if (acc) { currentUser = acc; showDashboard(); return; }
+            } catch(e) {}
+        }
+        document.getElementById('loginPage').style.display = 'flex';
+        loginUser.focus();
+    });
+
+    setInterval(() => {
+        if (currentUser) sessionStorage.setItem('panel_session', JSON.stringify({ username: currentUser.username }));
+    }, 2000);
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && addUserModal.classList.contains('show')) {
+            addUserModal.classList.remove('show');
+            document.getElementById('addUserForm').reset();
+        }
+    });
+</script>
+</body>
+</html>
