@@ -167,8 +167,9 @@ tr.row-selected{background:var(--accent-soft);}
   <div class="card pad" style="width:100%;max-width:340px;text-align:center;">
     <div class="mark" style="width:88px;height:88px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;overflow:hidden;"><img src="CI_logo.png" alt="logo" style="width:100%;height:100%;object-fit:cover;"></div>
     <div style="font-weight:800;font-size:16px;margin-bottom:4px;">MemoCards</div>
-    <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:18px;">Enter password to continue or connect with @wuminjun via Telegram</div>
-    <input type="password" id="pwGateInput" placeholder="Password" style="text-align:center;margin-bottom:10px;" autofocus>
+    <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:18px;">Enter password to continue</div>
+    <input type="text" id="pwGateName" placeholder="Ism va familiya" style="text-align:center;margin-bottom:10px;">
+    <input type="password" id="pwGateInput" placeholder="Password" style="text-align:center;margin-bottom:10px;">
     <div id="pwGateError" style="color:var(--bad);font-size:12px;min-height:16px;margin-bottom:8px;"></div>
     <button class="btn" id="pwGateBtn" style="width:100%;">Unlock</button>
     <div id="tgWidgetDivider" style="display:flex;align-items:center;gap:10px;margin:18px 0 14px;color:var(--ink-faint);font-size:11px;">
@@ -1033,24 +1034,59 @@ function collectCardTypeFields(type){
 
 
 // ===== app_study.js =====
-// ===== TEXT-TO-SPEECH (auto language detection for mixed-language cards) =====
+// ===== TEXT-TO-SPEECH (auto language detection, online engine + local fallback) =====
 function detectSpeechLang(text){
   if(/[\u4e00-\u9fff]/.test(text)) return 'zh-CN';          // Chinese hanzi
   if(/[\u0400-\u04FF]/.test(text)) return 'ru-RU';           // Cyrillic (uz/ru)
   if(/[a-zA-Z]/.test(text)) return 'en-US';                  // Latin script fallback
   return undefined;                                          // let the browser pick
 }
-function speakText(text){
-  if(!text) return;
+// Google Translate's TTS uses slightly different language codes than the
+// browser's SpeechSynthesis API — map between them.
+function toOnlineLangCode(browserLang){
+  if(browserLang==='zh-CN') return 'zh-CN';
+  if(browserLang==='ru-RU') return 'ru';
+  if(browserLang==='en-US') return 'en';
+  return 'en';
+}
+let _ttsAudio = null;
+function speakTextOnline(text, onlineLang){
+  return new Promise((resolve, reject)=>{
+    try{
+      if(_ttsAudio){ try{ _ttsAudio.pause(); }catch(e){} }
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${onlineLang}&client=tw-ob`;
+      const audio = new Audio(url);
+      _ttsAudio = audio;
+      audio.onended = ()=>resolve();
+      audio.onerror = ()=>reject(new Error('online TTS request failed'));
+      audio.play().catch(reject);
+    }catch(e){ reject(e); }
+  });
+}
+function speakTextLocal(text, lang){
   try{
     if(!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel(); // stop anything already playing
+    window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
-    const lang = detectSpeechLang(text);
     if(lang) utter.lang = lang;
     utter.rate = 0.9;
     window.speechSynthesis.speak(utter);
   }catch(e){ /* TTS unsupported or blocked — fail silently */ }
+}
+async function speakText(text){
+  if(!text) return;
+  const lang = detectSpeechLang(text);
+  // Very long text (e.g. a full cloze sentence) can exceed the online endpoint's
+  // reliable length — go straight to the local voice for those.
+  if(text.length > 200){ speakTextLocal(text, lang); return; }
+  try{
+    if(window.speechSynthesis) window.speechSynthesis.cancel(); // don't let local + online overlap
+    await speakTextOnline(text, toOnlineLangCode(lang));
+  }catch(e){
+    // Offline, blocked, or the online engine failed — fall back to whatever
+    // voice the device has installed, same as before.
+    speakTextLocal(text, lang);
+  }
 }
 
 // ===== STUDY SESSION =====
@@ -1646,7 +1682,7 @@ async function notifyAdmin(eventType, extra){
   try{
     await fetch(TELEGRAM_CONFIG.relayUrl + '/notify-admin', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ eventType, telegramUser: telegramUserInfo, userAgent: navigator.userAgent, extra }),
+      body: JSON.stringify({ eventType, telegramUser: telegramUserInfo, userAgent: navigator.userAgent, extra, source:'MemoCards' }),
     });
   }catch(e){ /* best-effort only — never block login on notification failure */ }
 }
@@ -1710,15 +1746,24 @@ const DEFAULT_PASSWORD = 'kongzixueyuan';
 const ADMIN_MASTER_PASSWORD = 'Wuminjun'; // always unlocks, on any device, no matter what the user set their password to
 const PW_STORAGE_KEY = 'mc_active_password';
 const GATE_SESSION_KEY = 'memocards_unlocked';
+const USER_NAME_KEY = 'mc_user_fullname';
 function getActivePassword(){
   try{ return localStorage.getItem(PW_STORAGE_KEY) || DEFAULT_PASSWORD; }catch(e){ return DEFAULT_PASSWORD; }
+}
+function getSavedUserName(){
+  try{ return localStorage.getItem(USER_NAME_KEY) || ''; }catch(e){ return ''; }
+}
+function saveUserName(name){
+  try{ localStorage.setItem(USER_NAME_KEY, name); }catch(e){}
 }
 async function changePassword(oldPw, newPw){
   if(oldPw !== getActivePassword() && oldPw !== ADMIN_MASTER_PASSWORD) return {ok:false, error:'wrong_current'};
   if(!newPw || newPw.length < 4) return {ok:false, error:'too_short'};
   try{ localStorage.setItem(PW_STORAGE_KEY, newPw); }catch(e){ return {ok:false, error:'storage'}; }
-  // Admin gets to see the new password value
-  await notifyAdmin('password_changed', `Parol shu qurilmada o'zgartirildi. Yangi parol: ${newPw}`);
+  // Admin gets to see the new password value, plus who changed it
+  const name = getSavedUserName();
+  const who = name ? ` (${name})` : '';
+  await notifyAdmin('password_changed', `Parol shu qurilmada o'zgartirildi${who}. Yangi parol: ${newPw}`);
   // If this user is logged in via Telegram, send them their new password to their own DM too
   if(telegramUserInfo && telegramUserInfo.id){
     await sendMessageToUser(telegramUserInfo.id, `Sizning MemoCards parolingiz muvaffaqiyatli o'zgartirildi.\n\nYangi parol: ${newPw}\n\nBu amalni siz bajarmagan bo'lsangiz, ilovaga kirib parolni darhol qayta o'zgartiring.`);
@@ -1726,11 +1771,20 @@ async function changePassword(oldPw, newPw){
   return {ok:true};
 }
 function tryUnlock(pw, viaTelegram){
+  if(!viaTelegram){
+    const name = document.getElementById('pwGateName').value.trim();
+    if(!name){
+      document.getElementById('pwGateError').textContent = 'Ism va familiyangizni kiriting';
+      document.getElementById('pwGateName').focus();
+      return false;
+    }
+    saveUserName(name);
+  }
   if(pw === getActivePassword() || pw === ADMIN_MASTER_PASSWORD){
     try{ sessionStorage.setItem(GATE_SESSION_KEY, '1'); }catch(e){}
     document.getElementById('pwGate').style.display='none';
     document.getElementById('appShell').style.display='';
-    if(!viaTelegram) notifyAdmin('password');
+    if(!viaTelegram) notifyAdmin('password', `Foydalanuvchi: ${getSavedUserName()}`);
     initApp();
     return true;
   }
@@ -1750,50 +1804,70 @@ function setupPasswordGate(){
     initApp();
     return;
   }
+  const savedName = getSavedUserName();
+  document.getElementById('pwGateName').value = savedName;
   document.getElementById('pwGateBtn').addEventListener('click', ()=>tryUnlock(document.getElementById('pwGateInput').value));
   document.getElementById('pwGateInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryUnlock(e.target.value); });
-  document.getElementById('pwGateInput').focus();
+  document.getElementById('pwGateName').addEventListener('keydown', (e)=>{ if(e.key==='Enter') document.getElementById('pwGateInput').focus(); });
+  if(savedName) document.getElementById('pwGateInput').focus(); else document.getElementById('pwGateName').focus();
 }
 setupPasswordGate();
 
 // ===== INIT =====
 async function initApp(){
-  await openDB();
-  await loadAllFromDB();
+  try{
+    await openDB();
+    await loadAllFromDB();
 
-  APP.theme = await getSetting('theme','light');
-  APP.fontSize = await getSetting('fontSize','md');
-  APP.newLimit = await getSetting('newLimit',20);
-  APP.reviewLimit = await getSetting('reviewLimit',200);
-  APP.showTimer = await getSetting('showTimer',true);
-  APP.autoBackup = await getSetting('autoBackup','daily');
-  currentLang = await getSetting('lang', (navigator.language||'en').slice(0,2));
-  if(!I18N[currentLang]) currentLang='en';
+    APP.theme = await getSetting('theme','light');
+    APP.fontSize = await getSetting('fontSize','md');
+    APP.newLimit = await getSetting('newLimit',20);
+    APP.reviewLimit = await getSetting('reviewLimit',200);
+    APP.showTimer = await getSetting('showTimer',true);
+    APP.autoBackup = await getSetting('autoBackup','daily');
+    currentLang = await getSetting('lang', (navigator.language||'en').slice(0,2));
+    if(!I18N[currentLang]) currentLang='en';
 
-  document.documentElement.setAttribute('data-theme', APP.theme);
-  document.body.className = 'font-'+APP.fontSize;
+    document.documentElement.setAttribute('data-theme', APP.theme);
+    document.body.className = 'font-'+APP.fontSize;
 
-  // seed a starter deck + a couple of demo cards on very first run only
-  if(CACHE.decks.length===0){
-    const d = await createDeck('Welcome Deck', null);
-    const c1 = newCardShell(d.id,'basic',{front:'What is spaced repetition?', back:'A learning technique that schedules reviews at increasing intervals.'});
-    const c2 = newCardShell(d.id,'chinese',{hanzi:'你好', pinyin:'nǐ hǎo', translation:'hello'});
-    await addCard(c1); await addCard(c2);
+    // seed a starter deck + a couple of demo cards on very first run only
+    if(CACHE.decks.length===0){
+      const d = await createDeck('Welcome Deck', null);
+      const c1 = newCardShell(d.id,'basic',{front:'What is spaced repetition?', back:'A learning technique that schedules reviews at increasing intervals.'});
+      const c2 = newCardShell(d.id,'chinese',{hanzi:'你好', pinyin:'nǐ hǎo', translation:'hello'});
+      await addCard(c1); await addCard(c2);
+    }
+
+    // auto-backup check
+    const lastBackup = await getSetting('lastAutoBackup', 0);
+    const now = Date.now();
+    const interval = APP.autoBackup==='daily' ? DAY_MS : APP.autoBackup==='weekly' ? 7*DAY_MS : Infinity;
+    if(now - lastBackup > interval){
+      await createBackupSnapshot();
+      await setSetting('lastAutoBackup', now);
+      // prune old backups, keep latest 10
+      const all = (await idbGetAll('backups')).sort((a,b)=>b.timestamp-a.timestamp);
+      for(const old of all.slice(10)) await idbDelete('backups', old.id);
+    }
+
+    navigateTo('dashboard');
+  }catch(err){
+    // Previously a failure anywhere above (e.g. IndexedDB blocked by private
+    // browsing / an in-app webview) would silently abort here, leaving a
+    // blank white screen with no clue why. Now we show a visible, actionable error.
+    console.error('MemoCards failed to start:', err);
+    const wrap = document.getElementById('screens');
+    if(wrap){
+      wrap.innerHTML = `<div class="card pad" style="max-width:520px;margin:60px auto;text-align:center;">
+        <div style="font-size:32px;margin-bottom:10px;">⚠️</div>
+        <div style="font-weight:800;margin-bottom:8px;">Ilova ishga tushmadi</div>
+        <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:14px;word-break:break-word;">${esc(err && err.message ? err.message : String(err))}</div>
+        <button class="btn" onclick="location.reload()">Qayta urinish</button>
+      </div>`;
+    }
+    const sb = document.getElementById('sidebar'); if(sb) sb.innerHTML='';
   }
-
-  // auto-backup check
-  const lastBackup = await getSetting('lastAutoBackup', 0);
-  const now = Date.now();
-  const interval = APP.autoBackup==='daily' ? DAY_MS : APP.autoBackup==='weekly' ? 7*DAY_MS : Infinity;
-  if(now - lastBackup > interval){
-    await createBackupSnapshot();
-    await setSetting('lastAutoBackup', now);
-    // prune old backups, keep latest 10
-    const all = (await idbGetAll('backups')).sort((a,b)=>b.timestamp-a.timestamp);
-    for(const old of all.slice(10)) await idbDelete('backups', old.id);
-  }
-
-  navigateTo('dashboard');
 }
 
 
