@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MemoCards</title>
+<title>Flashcard</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#5B5FEF">
+<meta name="theme-color" content="#0D9488">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="MemoCards">
+<meta name="apple-mobile-web-app-title" content="Flashcard">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <style>
@@ -16,7 +16,7 @@
   --bg:#F7F7F5; --bg-elev:#FFFFFF; --bg-sunken:#EFEEEA;
   --ink:#1B1B1F; --ink-soft:#5C5B66; --ink-faint:#9694A0;
   --line:#E4E2DD; --line-soft:#EDECE8;
-  --accent:#5B5FEF; --accent-soft:#EEEEFD; --accent-ink:#FFFFFF;
+  --accent:#0D9488; --accent-soft:#E4F5F3; --accent-ink:#FFFFFF;
   --good:#2F9E6E; --good-soft:#E6F6EF;
   --warn:#D08B2A; --warn-soft:#FCF1E1;
   --bad:#D64545; --bad-soft:#FCEAEA;
@@ -32,7 +32,7 @@
   --bg:#17171C; --bg-elev:#1F1F26; --bg-sunken:#131317;
   --ink:#EDECF2; --ink-soft:#B3B1BE; --ink-faint:#726F7E;
   --line:#2C2C35; --line-soft:#26262E;
-  --accent:#7B7FFF; --accent-soft:#26263D; --accent-ink:#FFFFFF;
+  --accent:#2DD4BF; --accent-soft:#134E4A; --accent-ink:#FFFFFF;
   --good:#3FBE8A; --good-soft:#173226;
   --warn:#E3A34C; --warn-soft:#332711;
   --bad:#F16B6B; --bad-soft:#331A1A;
@@ -56,7 +56,7 @@ a{color:var(--accent);}
   transition:transform .2s ease;
 }
 .brand{display:flex;align-items:center;gap:9px;padding:6px 8px 18px;}
-.brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#8B6FF0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0;}
+.brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0;}
 .brand .name{font-weight:800;font-size:16px;letter-spacing:-.01em;}
 .nav-group{margin-bottom:4px;}
 .navitem{
@@ -157,12 +157,17 @@ tr.row-selected{background:var(--accent-soft);}
 <div class="overlay" id="mobileOverlay"></div>
 <div id="pwGate" style="position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;">
   <div class="card pad" style="width:100%;max-width:340px;text-align:center;">
-    <div class="mark" style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#8B6FF0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;margin:0 auto 14px;">M</div>
-    <div style="font-weight:800;font-size:16px;margin-bottom:4px;">MemoCards</div>
+    <div class="mark" style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#0EA5E9);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:19px;margin:0 auto 14px;">🗂</div>
+    <div style="font-weight:800;font-size:16px;margin-bottom:4px;">Flashcard</div>
     <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:18px;">Enter password to continue</div>
     <input type="password" id="pwGateInput" placeholder="Password" style="text-align:center;margin-bottom:10px;" autofocus>
     <div id="pwGateError" style="color:var(--bad);font-size:12px;min-height:16px;margin-bottom:8px;"></div>
     <button class="btn" id="pwGateBtn" style="width:100%;">Unlock</button>
+    <div id="tgWidgetDivider" style="display:flex;align-items:center;gap:10px;margin:18px 0 14px;color:var(--ink-faint);font-size:11px;">
+      <div style="flex:1;height:1px;background:var(--line);"></div>OR<div style="flex:1;height:1px;background:var(--line);"></div>
+    </div>
+    <div id="tgWidgetContainer" style="display:flex;justify-content:center;"></div>
+    <div id="tgWidgetHint" style="font-size:10.5px;color:var(--ink-faint);margin-top:8px;"></div>
   </div>
 </div>
 <div class="shell" id="appShell" style="display:none;">
@@ -170,7 +175,7 @@ tr.row-selected{background:var(--accent-soft);}
   <main class="main">
     <div class="mobile-topbar">
       <button class="icon-btn" id="mobileMenuBtn">☰</button>
-      <span class="name">MemoCards</span>
+      <span class="name">Flashcard</span>
     </div>
     <div id="screens"></div>
   </main>
@@ -182,7 +187,7 @@ tr.row-selected{background:var(--accent-soft);}
 // ===== i18n =====
 const I18N = {
 en: {
-  appName:"MemoCards", nav_dashboard:"Dashboard", nav_decks:"Decks", nav_study:"Study",
+  appName:"Flashcard", nav_dashboard:"Dashboard", nav_decks:"Decks", nav_study:"Study",
   nav_stats:"Statistics", nav_browser:"Card Browser", nav_io:"Import / Export",
   nav_settings:"Settings", nav_backup:"Backup Manager",
   dash_title:"Dashboard", dash_sub:"Your learning overview",
@@ -231,7 +236,7 @@ en: {
   keyboard_hint:"Keyboard: Space=flip, 1-4=grade, ←=back",
 },
 zh: {
-  appName:"记忆卡", nav_dashboard:"仪表盘", nav_decks:"卡组", nav_study:"学习",
+  appName:"闪卡", nav_dashboard:"仪表盘", nav_decks:"卡组", nav_study:"学习",
   nav_stats:"统计", nav_browser:"卡片浏览器", nav_io:"导入/导出",
   nav_settings:"设置", nav_backup:"备份管理",
   dash_title:"仪表盘", dash_sub:"学习概览",
@@ -280,7 +285,7 @@ zh: {
   keyboard_hint:"快捷键：空格=翻转，1-4=评分，←=返回",
 },
 uz: {
-  appName:"MemoCards", nav_dashboard:"Bosh sahifa", nav_decks:"To'plamlar", nav_study:"O'rganish",
+  appName:"Flashcard", nav_dashboard:"Bosh sahifa", nav_decks:"To'plamlar", nav_study:"O'rganish",
   nav_stats:"Statistika", nav_browser:"Kartalar ro'yxati", nav_io:"Import/Eksport",
   nav_settings:"Sozlamalar", nav_backup:"Zaxira nusxalar",
   dash_title:"Bosh sahifa", dash_sub:"O'quv jarayoni ko'rinishi",
@@ -335,7 +340,7 @@ function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en
 
 // ===== db.js =====
 // ===== IndexedDB LAYER =====
-const DB_NAME = 'memocards_db';
+const DB_NAME = 'flashcard_db';
 const DB_VERSION = 1;
 let db = null;
 
@@ -630,7 +635,7 @@ function renderSidebar(){
   const sb=document.getElementById('sidebar');
   const dueTotal = CACHE.cards.filter(c=>isDue(c) && (c.state!=='new')).length + Math.min(APP.newLimit, CACHE.cards.filter(c=>c.state==='new').length);
   sb.innerHTML = `
-    <div class="brand"><div class="mark">M</div><div class="name">${t('appName')}</div></div>
+    <div class="brand"><div class="mark">🗂</div><div class="name">${t('appName')}</div></div>
     <div class="nav-group">
       ${NAV_ITEMS.map(n=>`
         <div class="navitem ${APP.screen===n.id?'active':''}" data-nav="${n.id}">
@@ -1460,6 +1465,17 @@ function renderSettingsScreen(wrap){
           <select id="setAutoBackup"><option value="never" ${APP.autoBackup==='never'?'selected':''}>${t('settings_never')}</option><option value="daily" ${APP.autoBackup==='daily'?'selected':''}>${t('settings_daily')}</option><option value="weekly" ${APP.autoBackup==='weekly'?'selected':''}>${t('settings_weekly')}</option></select></label>
         <button class="btn" id="saveSettingsBtn" style="margin-top:8px;">${t('card_save')}</button>
       </div>
+      <div class="card pad" style="max-width:520px;margin-top:16px;">
+        <div style="font-weight:800;font-size:13.5px;margin-bottom:12px;">🔒 Change Password</div>
+        <label class="field"><span class="lbl">Current password</span><input type="password" id="pwOld" autocomplete="off"></label>
+        <label class="field"><span class="lbl">New password (min 4 characters)</span><input type="password" id="pwNew" autocomplete="off"></label>
+        <label class="field"><span class="lbl">Confirm new password</span><input type="password" id="pwConfirm" autocomplete="off"></label>
+        <div id="pwChangeMsg" style="font-size:12px;min-height:16px;margin-bottom:8px;"></div>
+        <button class="btn secondary" id="changePwBtn">Change Password</button>
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:10px;">
+          Saved only in this browser (this device). Admin will be notified via Telegram when this changes.
+        </div>
+      </div>
     </div>`;
   document.getElementById('saveSettingsBtn').addEventListener('click', async ()=>{
     APP.newLimit = parseInt(document.getElementById('setNewLimit').value)||20;
@@ -1479,6 +1495,22 @@ function renderSettingsScreen(wrap){
     ]);
     showToast(t('toast_saved'));
     renderSidebar(); renderSettingsScreen(document.getElementById('screens'));
+  });
+  document.getElementById('changePwBtn').addEventListener('click', async ()=>{
+    const oldPw = document.getElementById('pwOld').value;
+    const newPw = document.getElementById('pwNew').value;
+    const confirmPw = document.getElementById('pwConfirm').value;
+    const msg = document.getElementById('pwChangeMsg');
+    if(newPw !== confirmPw){ msg.textContent="New passwords don't match."; msg.style.color='var(--bad)'; return; }
+    const r = await changePassword(oldPw, newPw);
+    if(r.ok){
+      msg.textContent='Password changed successfully.'; msg.style.color='var(--good)';
+      showToast('Password updated');
+      document.getElementById('pwOld').value=''; document.getElementById('pwNew').value=''; document.getElementById('pwConfirm').value='';
+    } else {
+      msg.textContent = r.error==='wrong_current' ? 'Current password is incorrect.' : r.error==='too_short' ? 'New password must be at least 4 characters.' : 'Could not save password.';
+      msg.style.color='var(--bad);';
+    }
   });
 }
 
@@ -1523,14 +1555,97 @@ async function restoreFullData(data){
 
 
 // ===== app_init.js =====
-// ===== PASSWORD GATE =====
-const GATE_PASSWORD = 'kongzixueyuan';
-const GATE_SESSION_KEY = 'memocards_unlocked';
-function tryUnlock(pw){
-  if(pw === GATE_PASSWORD){
+// ===== TELEGRAM INTEGRATION =====
+// Reuses the same bot/relay as MemoCards (stateless relay — safe to share),
+// but all local storage keys below are namespaced separately so this app's
+// data never mixes with MemoCards' data in the same browser.
+const TELEGRAM_CONFIG = {
+  botUsername: 'wuminjunbot',
+  relayUrl: 'https://rough-glade-7019.narzullayevumidjon976.workers.dev',
+};
+let telegramUserInfo = null;
+
+function loadTelegramUserInfo(){
+  try{ const raw=localStorage.getItem('fc_tg_user'); telegramUserInfo = raw?JSON.parse(raw):null; }catch(e){}
+}
+function saveTelegramUserInfo(u){
+  telegramUserInfo=u;
+  try{ localStorage.setItem('fc_tg_user', JSON.stringify(u)); }catch(e){}
+}
+
+async function notifyAdmin(eventType, extra){
+  if(!TELEGRAM_CONFIG.relayUrl) return;
+  try{
+    await fetch(TELEGRAM_CONFIG.relayUrl + '/notify-admin', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ eventType, telegramUser: telegramUserInfo, userAgent: navigator.userAgent, extra, source:'Flashcard' }),
+    });
+  }catch(e){ /* best-effort only */ }
+}
+async function sendMessageToUser(chatId, text){
+  if(!TELEGRAM_CONFIG.relayUrl) return;
+  try{
+    await fetch(TELEGRAM_CONFIG.relayUrl + '/notify-user', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chatId, text }),
+    });
+  }catch(e){ /* best-effort only */ }
+}
+
+function renderTelegramWidget(){
+  const box = document.getElementById('tgWidgetContainer');
+  const hint = document.getElementById('tgWidgetHint');
+  if(!TELEGRAM_CONFIG.botUsername || !TELEGRAM_CONFIG.relayUrl){
+    document.getElementById('tgWidgetDivider').style.display='none';
+    hint.textContent='';
+    return;
+  }
+  window.onTelegramAuth = async (user)=>{
+    hint.textContent='Verifying...';
+    try{
+      const res = await fetch(TELEGRAM_CONFIG.relayUrl + '/verify-login', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(user)
+      });
+      const r = await res.json();
+      if(!r.ok){ hint.textContent='Verification failed. Try again.'; return; }
+      saveTelegramUserInfo(r.user);
+      await notifyAdmin('login');
+      tryUnlock(getActivePassword(), true);
+    }catch(e){ hint.textContent='Could not reach relay server.'; }
+  };
+  const s = document.createElement('script');
+  s.src='https://telegram.org/js/telegram-widget.js?22';
+  s.setAttribute('data-telegram-login', TELEGRAM_CONFIG.botUsername);
+  s.setAttribute('data-size','large');
+  s.setAttribute('data-onauth','onTelegramAuth(user)');
+  s.setAttribute('data-request-access','write');
+  box.appendChild(s);
+}
+
+// ===== PASSWORD GATE (admin master password + per-device user password) =====
+const DEFAULT_PASSWORD = 'kongzixueyuan';
+const ADMIN_MASTER_PASSWORD = 'Wuminjun'; // always unlocks, on any device, regardless of the user's own password
+const PW_STORAGE_KEY = 'fc_active_password';
+const GATE_SESSION_KEY = 'flashcard_unlocked';
+function getActivePassword(){
+  try{ return localStorage.getItem(PW_STORAGE_KEY) || DEFAULT_PASSWORD; }catch(e){ return DEFAULT_PASSWORD; }
+}
+async function changePassword(oldPw, newPw){
+  if(oldPw !== getActivePassword() && oldPw !== ADMIN_MASTER_PASSWORD) return {ok:false, error:'wrong_current'};
+  if(!newPw || newPw.length < 4) return {ok:false, error:'too_short'};
+  try{ localStorage.setItem(PW_STORAGE_KEY, newPw); }catch(e){ return {ok:false, error:'storage'}; }
+  await notifyAdmin('password_changed', `Parol shu qurilmada o'zgartirildi. Yangi parol: ${newPw}`);
+  if(telegramUserInfo && telegramUserInfo.id){
+    await sendMessageToUser(telegramUserInfo.id, `Sizning Flashcard parolingiz muvaffaqiyatli o'zgartirildi.\n\nYangi parol: ${newPw}\n\nBu amalni siz bajarmagan bo'lsangiz, ilovaga kirib parolni darhol qayta o'zgartiring.`);
+  }
+  return {ok:true};
+}
+function tryUnlock(pw, viaTelegram){
+  if(pw === getActivePassword() || pw === ADMIN_MASTER_PASSWORD){
     try{ sessionStorage.setItem(GATE_SESSION_KEY, '1'); }catch(e){}
     document.getElementById('pwGate').style.display='none';
     document.getElementById('appShell').style.display='';
+    if(!viaTelegram) notifyAdmin('password');
     initApp();
     return true;
   }
@@ -1540,6 +1655,8 @@ function tryUnlock(pw){
   return false;
 }
 function setupPasswordGate(){
+  loadTelegramUserInfo();
+  renderTelegramWidget();
   let alreadyUnlocked=false;
   try{ alreadyUnlocked = sessionStorage.getItem(GATE_SESSION_KEY)==='1'; }catch(e){}
   if(alreadyUnlocked){
@@ -1554,44 +1671,62 @@ function setupPasswordGate(){
 }
 setupPasswordGate();
 
+
 // ===== INIT =====
 async function initApp(){
-  await openDB();
-  await loadAllFromDB();
+  try{
+    await openDB();
+    await loadAllFromDB();
 
-  APP.theme = await getSetting('theme','light');
-  APP.fontSize = await getSetting('fontSize','md');
-  APP.newLimit = await getSetting('newLimit',20);
-  APP.reviewLimit = await getSetting('reviewLimit',200);
-  APP.showTimer = await getSetting('showTimer',true);
-  APP.autoBackup = await getSetting('autoBackup','daily');
-  currentLang = await getSetting('lang', (navigator.language||'en').slice(0,2));
-  if(!I18N[currentLang]) currentLang='en';
+    APP.theme = await getSetting('theme','light');
+    APP.fontSize = await getSetting('fontSize','md');
+    APP.newLimit = await getSetting('newLimit',20);
+    APP.reviewLimit = await getSetting('reviewLimit',200);
+    APP.showTimer = await getSetting('showTimer',true);
+    APP.autoBackup = await getSetting('autoBackup','daily');
+    currentLang = await getSetting('lang', (navigator.language||'en').slice(0,2));
+    if(!I18N[currentLang]) currentLang='en';
 
-  document.documentElement.setAttribute('data-theme', APP.theme);
-  document.body.className = 'font-'+APP.fontSize;
+    document.documentElement.setAttribute('data-theme', APP.theme);
+    document.body.className = 'font-'+APP.fontSize;
 
-  // seed a starter deck + a couple of demo cards on very first run only
-  if(CACHE.decks.length===0){
-    const d = await createDeck('Welcome Deck', null);
-    const c1 = newCardShell(d.id,'basic',{front:'What is spaced repetition?', back:'A learning technique that schedules reviews at increasing intervals.'});
-    const c2 = newCardShell(d.id,'chinese',{hanzi:'你好', pinyin:'nǐ hǎo', translation:'hello'});
-    await addCard(c1); await addCard(c2);
+    // seed a starter deck + a couple of demo cards on very first run only
+    if(CACHE.decks.length===0){
+      const d = await createDeck('Welcome Deck', null);
+      const c1 = newCardShell(d.id,'basic',{front:'What is spaced repetition?', back:'A learning technique that schedules reviews at increasing intervals.'});
+      const c2 = newCardShell(d.id,'chinese',{hanzi:'你好', pinyin:'nǐ hǎo', translation:'hello'});
+      await addCard(c1); await addCard(c2);
+    }
+
+    // auto-backup check
+    const lastBackup = await getSetting('lastAutoBackup', 0);
+    const now = Date.now();
+    const interval = APP.autoBackup==='daily' ? DAY_MS : APP.autoBackup==='weekly' ? 7*DAY_MS : Infinity;
+    if(now - lastBackup > interval){
+      await createBackupSnapshot();
+      await setSetting('lastAutoBackup', now);
+      // prune old backups, keep latest 10
+      const all = (await idbGetAll('backups')).sort((a,b)=>b.timestamp-a.timestamp);
+      for(const old of all.slice(10)) await idbDelete('backups', old.id);
+    }
+
+    navigateTo('dashboard');
+  }catch(err){
+    // Previously any failure above (e.g. IndexedDB blocked by private
+    // browsing / a restrictive in-app webview) silently aborted here,
+    // leaving a blank white screen with no clue why. Now it's visible.
+    console.error('MemoCards failed to start:', err);
+    const wrap = document.getElementById('screens');
+    if(wrap){
+      wrap.innerHTML = `<div class="card pad" style="max-width:520px;margin:60px auto;text-align:center;">
+        <div style="font-size:32px;margin-bottom:10px;">⚠️</div>
+        <div style="font-weight:800;margin-bottom:8px;">App failed to start</div>
+        <div style="font-size:12.5px;color:var(--ink-faint);margin-bottom:14px;word-break:break-word;">${esc(err && err.message ? err.message : String(err))}</div>
+        <button class="btn" onclick="location.reload()">Try again</button>
+      </div>`;
+    }
+    const sb = document.getElementById('sidebar'); if(sb) sb.innerHTML='';
   }
-
-  // auto-backup check
-  const lastBackup = await getSetting('lastAutoBackup', 0);
-  const now = Date.now();
-  const interval = APP.autoBackup==='daily' ? DAY_MS : APP.autoBackup==='weekly' ? 7*DAY_MS : Infinity;
-  if(now - lastBackup > interval){
-    await createBackupSnapshot();
-    await setSetting('lastAutoBackup', now);
-    // prune old backups, keep latest 10
-    const all = (await idbGetAll('backups')).sort((a,b)=>b.timestamp-a.timestamp);
-    for(const old of all.slice(10)) await idbDelete('backups', old.id);
-  }
-
-  navigateTo('dashboard');
 }
 
 
