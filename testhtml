@@ -1568,8 +1568,8 @@ async function restoreFullData(data){
 // ===== TELEGRAM INTEGRATION =====
 // FILL THESE IN after deploying telegram-worker.js to Cloudflare (see that file's header comment):
 const TELEGRAM_CONFIG = {
-  botUsername: '',      // e.g. 'MyMemoCardsBot' — WITHOUT the @ — safe to expose publicly
-  relayUrl: '',         // e.g. 'https://memocards-relay.yourname.workers.dev' — safe to expose publicly (token itself lives only in Cloudflare)
+  botUsername: '',      // ← ANIQLASHTIRISH KERAK: bot username'ingizni shu yerga yozing (@ belgisisiz)
+  relayUrl: 'https://rough-glade-7019.narzullayevumidjon976.workers.dev',
 };
 let telegramUserInfo = null; // populated after successful Telegram login, kept in localStorage for "send my data" feature
 
