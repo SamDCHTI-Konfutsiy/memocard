@@ -25,12 +25,12 @@
             <div id="loginError" class="error-msg">Parol noto'g'ri! Qaytadan urinib ko'ring.</div>
             
             <button id="loginBtn" class="btn-primary">Kirish</button>
-            <p class="hint">Parolni olish uchun Telegram: @wuminjun</p>
+            <p class="hint"> @wuminjun </p>
         </div>
     </div>
 
     <!-- ===== ASOSIY ILOVA ===== -->
-    <div id="mainApp" class="app-container hidden">
+    <div id="mainApp" class="app-container" style="display: none;">
         
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -82,49 +82,74 @@
             <!-- Dashboard View -->
             <section id="dashboardView" class="view active">
                 <h1 class="view-title">Boshqaruv paneli</h1>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <p class="stat-label">Jami Decklar</p>
-                        <h3 class="stat-value">4</h3>
-                    </div>
-                    <div class="stat-card">
-                        <p class="stat-label">Bugungi kartalar</p>
-                        <h3 class="stat-value">24</h3>
-                    </div>
-                    <div class="stat-card">
-                        <p class="stat-label">O'rganish ketma-ketligi</p>
-                        <h3 class="stat-value">7 kun</h3>
-                    </div>
-                    <div class="stat-card">
-                        <p class="stat-label">To'g'ri javoblar</p>
-                        <h3 class="stat-value">85%</h3>
-                    </div>
+                <div class="stats-grid" id="dashStats">
+                    <!-- Filled by JS -->
                 </div>
-                <button class="btn-primary btn-large">Bugungi darsni boshlash</button>
+                <button class="btn-primary btn-large" onclick="navigateTo('study')">Bugungi darsni boshlash</button>
             </section>
 
             <!-- Study View -->
             <section id="studyView" class="view">
                 <h1 class="view-title">O'rganish</h1>
-                <div class="flashcard-container">
-                    <div class="flashcard" id="flashcard">
-                        <div class="flashcard-inner">
-                            <div class="flashcard-front">
-                                <p class="card-text">Bu yerda savol yoki asosiy matn bo'ladi.</p>
-                                <span class="card-hint">Javobni ko'rish uchun bosing</span>
+                <div id="studyContainer">
+                    <div id="flashcardContainer" class="flashcard-container hidden">
+                        <div class="flashcard" id="flashcard">
+                            <div class="flashcard-inner">
+                                <div class="flashcard-front">
+                                    <p class="card-text" id="cardFront">Bu yerda savol yoki asosiy matn bo'ladi.</p>
+                                    <span class="card-hint">Javobni ko'rish uchun bosing</span>
+                                </div>
+                                <div class="flashcard-back">
+                                    <p class="card-text" id="cardBack">Bu yerda javob yoki tarjima bo'ladi.</p>
+                                    <span class="card-hint">Baholash uchun pastga qarang</span>
+                                </div>
                             </div>
-                            <div class="flashcard-back">
-                                <p class="card-text">Bu yerda javob yoki tarjima bo'ladi.</p>
-                                <span class="card-hint">Baholash uchun pastga qarang</span>
+                        </div>
+                        <div class="rating-buttons hidden" id="ratingButtons">
+                            <button class="btn-rate btn-again" onclick="rateCard('again')">Qayta</button>
+                            <button class="btn-rate btn-hard" onclick="rateCard('hard')">Qiyin</button>
+                            <button class="btn-rate btn-good" onclick="rateCard('good')">Yaxshi</button>
+                            <button class="btn-rate btn-easy" onclick="rateCard('easy')">Oson</button>
+                        </div>
+                    </div>
+                    <div id="noCardsScreen" class="no-cards-screen">
+                        <h3>Hozirda o'rganish uchun kartalar yo'q</h3>
+                        <p>Decklar bo'limiga o'tib yangiy so'zlar qo'shing.</p>
+                        <button class="btn-primary" onclick="navigateTo('decks')">Decklarga o'tish</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Decks View -->
+            <section id="decksView" class="view">
+                <h1 class="view-title">Decklar (To'plamlar)</h1>
+                <div class="deck-layout">
+                    <div class="deck-list-panel">
+                        <div class="form-row">
+                            <input type="text" id="newDeckName" placeholder="Yangi deck nomi (masalan: HSK 1)">
+                            <button id="addDeckBtn" class="btn-primary">+ Qo'shish</button>
+                        </div>
+                        <div id="deckList" class="list-container"></div>
+                    </div>
+                    <div class="card-list-panel">
+                        <div id="cardsManager">
+                            <div class="empty-state">
+                                <h3>Deckni tanlang</h3>
+                                <p>O'chirish yoki so'z qo'shish uchun chapdan biror to'plamni tanlang.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="rating-buttons hidden" id="ratingButtons">
-                        <button class="btn-rate btn-again">Qayta</button>
-                        <button class="btn-rate btn-hard">Qiyin</button>
-                        <button class="btn-rate btn-good">Yaxshi</button>
-                        <button class="btn-rate btn-easy">Oson</button>
-                    </div>
+                </div>
+            </section>
+
+            <!-- Stats View -->
+            <section id="statsView" class="view">
+                <h1 class="view-title">Statistika</h1>
+                <div class="stats-grid" id="mainStatsGrid"></div>
+                
+                <div class="chart-container">
+                    <h3>Kartalar taqsimoti</h3>
+                    <div class="progress-bars" id="cardDistribution"></div>
                 </div>
             </section>
 
@@ -144,11 +169,8 @@
                 <div class="settings-card">
                     <h3>Ma'lumotlar</h3>
                     <div class="form-group">
-                        <label>Zaxira nusxa (Backup)</label>
-                        <div class="btn-row">
-                            <button class="btn-secondary">Eksport (JSON)</button>
-                            <button class="btn-secondary">Import (JSON)</button>
-                        </div>
+                        <label>Ma'lumotlarni tozalash (Barcha so'zlar o'chiriladi)</label>
+                        <button id="clearDataBtn" class="btn-danger">Barcha ma'lumotlarni o'chirish</button>
                     </div>
                 </div>
             </section>
