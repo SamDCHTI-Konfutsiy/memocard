@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const STORAGE_KEY = 'flashlearn_password';
     const SESSION_KEY = 'flashlearn_session';
     const DATA_KEY = 'flashlearn_data';
-    const DEFAULT_PASSWORD = 'kongzixueyuan';
+    const DEFAULT_PASSWORD = 'kkkk';
 
     if (!localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, DEFAULT_PASSWORD);
     if (!localStorage.getItem(DATA_KEY)) localStorage.setItem(DATA_KEY, JSON.stringify({ decks: [], cards: [] }));
@@ -18,8 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem(SESSION_KEY) === 'active') showApp();
     else showLogin();
 
-    function showLogin() { loginScreen.style.display = 'flex'; mainApp.style.display = 'none'; }
-    function showApp() { loginScreen.style.display = 'none'; mainApp.style.display = 'flex'; initApp(); }
+    function showLogin() { 
+        loginScreen.style.display = 'flex'; 
+        mainApp.style.display = 'none'; 
+    }
+    
+    function showApp() { 
+        loginScreen.style.display = 'none'; 
+        mainApp.style.display = 'flex'; 
+        initApp(); 
+    }
 
     loginBtn.addEventListener('click', attemptLogin);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin(); });
@@ -46,16 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPass = document.getElementById('newPasswordInput').value;
         if (newPass.length >= 4) {
             localStorage.setItem(STORAGE_KEY, newPass);
-            alert('Parol muvaffaqiyatli o\'zgartirildi!');
+            alert(`Parol muvaffaqiyatli o'zgartirildi!`);
             document.getElementById('newPasswordInput').value = '';
-        } else alert('Yangi parol kamida 4 ta belgidan iborat bo\'lishi kerak.');
+        } else alert(`Yangi parol kamida 4 ta belgidan iborat bo'lishi kerak.`);
     });
 
     document.getElementById('clearDataBtn').addEventListener('click', () => {
-        if(confirm('Barcha so\'zlar va decklar o\'chiriladi. Davom etasizmi?')) {
+        if(confirm(`Barcha so'zlar va decklar o'chiriladi. Davom etasizmi?`)) {
             localStorage.setItem(DATA_KEY, JSON.stringify({ decks: [], cards: [] }));
             renderAll();
-            alert('Ma\'lumotlar tozalandi.');
+            alert(`Ma'lumotlar tozalandi.`);
         }
     });
 
@@ -128,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         list.innerHTML = '';
 
         if (data.decks.length === 0) {
-            list.innerHTML = '<p style="color:var(--text-muted); padding:10px;">Hozircha decklar yo'q.</p>';
+            list.innerHTML = `<p style="color:var(--text-muted); padding:10px;">Hozircha decklar yo'q.</p>`;
             return;
         }
 
@@ -201,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const listContainer = document.getElementById('cardListContainer');
         if (cards.length === 0) {
-            listContainer.innerHTML = '<p style="color:var(--text-muted); margin-top:16px;">Bu deckda hozir so'zlar yo'q.</p>';
+            listContainer.innerHTML = `<p style="color:var(--text-muted); margin-top:16px;">Bu deckda hozir so'zlar yo'q.</p>`;
             return;
         }
 
@@ -233,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.rateCard = function(rating) {
-        // Oddiy o'chirish logikasi (kelajakda SM-2 qo'shiladi)
         currentCardIndex++;
         loadNextCard();
     }
@@ -255,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initStudy() {
         const data = getData();
-        studyQueue = [...data.cards]; // Hozircha barcha kartalarni o'qishga olamiz
+        studyQueue = [...data.cards];
         currentCardIndex = 0;
 
         if (studyQueue.length === 0) {
@@ -273,9 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = getData();
         const totalDecks = data.decks.length;
         const totalCards = data.cards.length;
-        const learnedCards = data.cards.length; // Hozircha faqat mavjud kartalar hisoblanadi
+        const learnedCards = data.cards.length;
         
-        // Dashboard
         document.getElementById('dashStats').innerHTML = `
             <div class="stat-card"><p class="stat-label">Jami Decklar</p><h3 class="stat-value">${totalDecks}</h3></div>
             <div class="stat-card"><p class="stat-label">Jami So'zlar</p><h3 class="stat-value">${totalCards}</h3></div>
@@ -283,17 +289,15 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="stat-card"><p class="stat-label">Faollik</p><h3 class="stat-value">100%</h3></div>
         `;
 
-        // Stats Page
         document.getElementById('mainStatsGrid').innerHTML = `
             <div class="stat-card"><p class="stat-label">Jami Decklar</p><h3 class="stat-value">${totalDecks}</h3></div>
             <div class="stat-card"><p class="stat-label">Jami Kartalar</p><h3 class="stat-value">${totalCards}</h3></div>
             <div class="stat-card"><p class="stat-label">O'rganilgan</p><h3 class="stat-value">${learnedCards}</h3></div>
         `;
 
-        // Distribution chart
         const distContainer = document.getElementById('cardDistribution');
         if (totalDecks === 0) {
-            distContainer.innerHTML = '<p style="color:var(--text-muted)">Hozircha statistika yo\'q.</p>';
+            distContainer.innerHTML = `<p style="color:var(--text-muted)">Hozircha statistika yo'q.</p>`;
             return;
         }
 
